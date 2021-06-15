@@ -1,0 +1,8 @@
+---
+- name: setup dependencies
+  hosts: all
+  roles:
+    - common
+    - { role: "nano", when: ( 'nano' in group_names ) }
+    - wireguard
+    - docker

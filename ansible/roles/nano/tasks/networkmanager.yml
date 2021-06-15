@@ -1,0 +1,47 @@
+---
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: ensure /etc/network/interfaces is valid
+  ansible.builtin.template:
+    dest: /etc/network/interfaces
+    src: interfaces.j2
+    owner: root
+    mode: "0644"
+    validate: /sbin/ifup -i %s -n -v --all
+  notify: reboot system
+
+- name: Enable systemd-networkd
+  ansible.builtin.systemd:
+    name: systemd-networkd
+    daemon_reload: yes
+    state: started
+    enabled: yes
+  when: "'systemd-networkd.service' in services"
+
+- name: Enable networkd-dispatcher
+  ansible.builtin.systemd:
+    name: networkd-dispatcher
+    daemon_reload: yes
+    state: started
+    enabled: yes
+  when: "'networkd-dispatcher.service' in services"
+
+- name: disable networkmanager
+  ansible.builtin.systemd:
+    name: network-manager
+    daemon_reload: yes
+    state: stopped
+    enabled: no
+  when: "'network-manager' in services"
+  notify: reboot system
+
+- name: purge networkmanager
+  ansible.builtin.apt:
+    name:
+      - network-manager-gnome
+      - network-manager
+    state: absent
+    purge: yes
+    autoremove: yes
+  notify: reboot system

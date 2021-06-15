@@ -1,0 +1,29 @@
+---
+- name: Make sure we have a 'wheel' group
+  group:
+    name: wheel
+    state: present
+
+- name: Allow 'wheel' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    validate: "visudo -cf %s"
+
+- name: create user
+  ansible.builtin.user:
+    comment: "CHI-in-a-Box"
+    create_home: yes
+    name: chameleon
+    append: yes
+    groups:
+      - wheel
+    system: yes
+
+- name: Set up authorized keys for the chameleon user
+  ansible.posix.authorized_key:
+    user: chameleon
+    state: present
+    key: "{{ lookup('file', 'cc-ansible.pub') }}"

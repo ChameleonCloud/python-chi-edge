@@ -1,0 +1,31 @@
+---
+# From https://lunar.computer/posts/nvidia-jetson-nano-headless/
+
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Change default target to multi-user.target
+  file:
+    src: /lib/systemd/system/multi-user.target
+    dest: /etc/systemd/system/default.target
+    state: link
+  notify: reboot system
+
+- name: disable gui
+  ansible.builtin.systemd:
+    name: gdm3
+    daemon_reload: yes
+    state: stopped
+    enabled: no
+  when: "'gdm3' in services"
+  notify: reboot system
+
+- name: purge gui
+  ansible.builtin.apt:
+    name:
+      - gdm3
+      - ubuntu-desktop
+    state: absent
+    purge: yes
+    autoremove: yes
+  notify: reboot system

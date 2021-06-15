@@ -1,0 +1,47 @@
+---
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: setup hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: setup dhcpcd hook
+  ansible.builtin.copy:
+    dest: "/usr/lib/dhcpcd/dhcpcd-hooks/40-chameleon"
+    src: dhcpcd-hook
+    owner: root
+    group: root
+    mode: 0744
+  when: "'dhcpcd' in services"
+  notify: reboot system
+
+- name: setup networkd-dispatcher hook
+  ansible.builtin.copy:
+    dest: "/usr/lib/networkd-dispatcher/routable.d/40-chameleon"
+    src: networkd-dispatcher-hook
+    owner: root
+    group: root
+    mode: 0744
+  when: "'networkd-dispatcher.service' in services"
+  notify: reboot system
+
+
+- name: setup wg configs
+  ansible.builtin.copy:
+    dest: "/root/"
+    src: gen_channel_conf.sh
+    owner: root
+    group: root
+    mode: 0700
+
+- name: Execute wg config script
+  ansible.builtin.command:
+    argv:
+      - /root/gen_channel_conf.sh
+      - "{{mgmt_ipv4}}"
+      - "{{user_ipv4}}"
+    creates: /root/.config/chameleon/mgmt.channel
+
+- name: force reboot if needed
+  meta: flush_handlers

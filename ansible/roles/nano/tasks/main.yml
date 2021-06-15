@@ -1,0 +1,5 @@
+---
+- name: remove GUI for headless
+  import_tasks: headless.yml
+- name: remove networkmanager
+  import_tasks: networkmanager.yml

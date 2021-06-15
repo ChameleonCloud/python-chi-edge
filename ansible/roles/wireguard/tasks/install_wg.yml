@@ -1,0 +1,10 @@
+---
+- name: install DKMS
+  ansible.builtin.package:
+    name: dkms
+    state: present
+
+- name: Install wireguard
+  ansible.builtin.package:
+    name: wireguard
+    state: present

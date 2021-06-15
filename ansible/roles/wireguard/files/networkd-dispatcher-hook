@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Set up Wireguard tunnels for CHI@Edge comms channels
+# Note: it is important for this to be POSIX-compliant, as dhcpcd executes
+# the hook within a limited shell (i.e., not Bash/Zsh)
+
+chi_cfgdir="/root/.config/chameleon"
+
+configure_tunnel() {
+    local dev="$1"
+    local cfg="$2"
+    local mtu="$3"
+
+    ip link show dev "$dev" >/dev/null || ip link add dev "$dev" type wireguard
+    [ -n "$mtu" ] && ip link set dev "$dev" mtu "$mtu"
+
+    read ipv4 <"$chi_cfgdir"/"$cfg".ipv4
+    ip addr replace "$ipv4" dev "$dev"
+
+    wg setconf "$dev" "$chi_cfgdir"/"$cfg".channel
+    ip link set dev "$dev" up
+
+    local routefile="$chi_cfgdir"/"$cfg".routes
+    if [ -f "$routefile" ]; then
+        while IFS= read -r route; do ip route replace $route; done <"$routefile"
+    fi
+}
+
+configure_tunnel wg0 mgmt
+# VxLAN encapsulation could be running over this
+# link, which will require additional packet overhead.
+# WireGuard transparently handles chunking the packets
+# and this is easier than fiddling with intermediate
+# MTUs everywhere.
+configure_tunnel wg1 user 1600
+exit 0

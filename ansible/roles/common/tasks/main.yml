@@ -1,0 +1,5 @@
+---
+- name: configure users
+  import_tasks: setup_users.yml
+- name: install dependencies
+  import_tasks: install_depends.yml

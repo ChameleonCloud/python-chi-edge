@@ -1,0 +1,27 @@
+---
+- name: ensure system is up to date
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install python3
+  ansible.builtin.package:
+    name: python3
+    state: present
+
+- name: Alternatives link created
+  community.general.alternatives:
+    name: python
+    link: /usr/bin/python
+    path: /usr/bin/python3
+
+- name: Install python3-venv
+  ansible.builtin.package:
+    name: python3-venv
+    state: present
+
+- name: setup venv and install six
+  ansible.builtin.pip:
+    name: six
+    virtualenv: /etc/ansible/venv
+    virtualenv_command: python3 -m venv

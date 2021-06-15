@@ -1,0 +1,16 @@
+---
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: create override dir
+  ansible.builtin.file:
+    path: /etc/systemd/system/docker.service.d/
+    state: directory
+  when: "'docker.service' in services"
+
+- name: expose docker daemon to mgmt host
+  ansible.builtin.template:
+    dest: /etc/systemd/system/docker.service.d/override.conf
+    src: override.conf.j2
+  notify: restart docker
+  when: "'docker.service' in services"
