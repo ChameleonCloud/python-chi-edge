@@ -14,15 +14,19 @@ filterwarnings = ["ignore::DeprecationWarning"]
 known_first_party = "chi_edge"
 
 [tool.poetry]
-name = "python-chi-edge"
+name = "chi_edge"
 version = "0.2.4"
 description = "This is a plugin for the openstack commandline client, to enable support for the Doni hardware inventory project"
 authors = [
     "Chameleon Project <contact@chameleoncloud.org>"
 ]
+include = ["chi_edge/ansible/**"]
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
+ansible = "^4.0.0"
+ansible-runner = "^1.4.7"
+click = "^8.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
