@@ -1,6 +1,6 @@
 # python-chi-edge
 
-[![unit tests](https://github.com/ChameleonCloud/python-chi-edge/actions/workflows/python-app.yml/badge.svg)](https://github.com/ChameleonCloud/python-chi-edge/actions/workflows/python-app.yml)
+[![Python application](https://github.com/ChameleonCloud/python-chi-edge/actions/workflows/python-app.yml/badge.svg)](https://github.com/ChameleonCloud/python-chi-edge/actions/workflows/python-app.yml)
 
 ## Install
 
