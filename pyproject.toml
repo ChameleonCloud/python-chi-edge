@@ -14,9 +14,12 @@ filterwarnings = ["ignore::DeprecationWarning"]
 known_first_party = "chi_edge"
 
 [tool.poetry]
-name = "chi_edge"
-version = "0.2.4"
-description = "This is a plugin for the openstack commandline client, to enable support for the Doni hardware inventory project"
+name = "python-chi-edge"
+packages = [
+    { include = "chi_edge" }
+]
+version = "0.0.1"
+description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
 authors = [
     "Chameleon Project <contact@chameleoncloud.org>"
 ]
