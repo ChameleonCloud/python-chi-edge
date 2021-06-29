@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import pathlib
-import sys
 import subprocess
+import sys
 import tempfile
 
 import ansible_runner
@@ -63,7 +63,7 @@ def run(playbook: "str", host: "str", host_vars: "dict" = None):
     with tempfile.TemporaryDirectory() as tmpdir:
         ansible_runner.run(
             private_data_dir=tmpdir,
-            project_dir=HERE.absolute(),
+            project_dir=HERE.absolute().as_posix(),
             playbook=playbook,
             inventory={"all": {"hosts": {host: host_vars}}},
         )
