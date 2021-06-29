@@ -51,9 +51,9 @@ def install_requirements():
             "collection",
             "install",
             "--requirements-file",
-            REQUIREMENTS_FILE.absolute(),
+            str(REQUIREMENTS_FILE.absolute()),
             "--collections-path",
-            COLLECTIONS_PATH.absolute(),
+            str(COLLECTIONS_PATH.absolute()),
         ],
         check=True,
     )
@@ -63,7 +63,7 @@ def run(playbook: "str", host: "str", host_vars: "dict" = None):
     with tempfile.TemporaryDirectory() as tmpdir:
         ansible_runner.run(
             private_data_dir=tmpdir,
-            project_dir=HERE.absolute().as_posix(),
+            project_dir=str(HERE.absolute()),
             playbook=playbook,
             inventory={"all": {"hosts": {host: host_vars}}},
         )
