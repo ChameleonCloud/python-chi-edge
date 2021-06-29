@@ -92,5 +92,12 @@ def run(playbook: "str", host: "str", host_vars: "dict" = None):
     ),
 )
 def cli(playbook: "str", host: "str", host_vars: "list[str]" = None):
-    host_vars_dict = {k: v for line in host_vars for k, v in line.split("=")}
+
+    host_vars_dict = {}
+    for line in host_vars:
+        k, v = line.split("=")
+        host_vars_dict.update({k: v})
+
     return run(f"{playbook}.yml", host, host_vars=host_vars_dict)
+
+    # host_vars_dict = {k: v for line in host_vars for k, v in line.split("=")}
