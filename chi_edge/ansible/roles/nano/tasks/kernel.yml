@@ -10,7 +10,7 @@
 
 - name: download kernel supplements
   ansible.builtin.unarchive:
-    src: https://github.com/ChameleonCloud/kernel-jetson-nano/releases/download/0.3/kernel_supplements.tbz2
+    src: "{{ nano_custom_kernel_repo }}/kernel_supplements.tbz2"
     dest: /
     remote_src: True
 
@@ -25,5 +25,5 @@
 
 - name: download boot image
   ansible.builtin.get_url:
-    url: https://github.com/ChameleonCloud/kernel-jetson-nano/releases/download/0.3/Image
+    url: "{{ nano_custom_kernel_repo }}/Image"
     dest: /boot/Image
