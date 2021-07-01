@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import pathlib
 import subprocess
 import sys
@@ -20,6 +21,7 @@ import tempfile
 import ansible_runner
 import click
 
+LOG = logging.getLogger(__name__)
 HERE = pathlib.Path(__file__).parent
 REQUIREMENTS_FILE = pathlib.Path(HERE, "requirements.yml")
 COLLECTIONS_PATH = pathlib.Path(sys.prefix, "share", "ansible", "collections")
@@ -59,13 +61,19 @@ def install_requirements():
     )
 
 
-def run(playbook: "str", host: "str", host_vars: "dict" = None):
+def run(playbook: "str", host: "str", group: "str" = None, host_vars: "dict" = None):
+    inventory = {"all": {"children": {}}}
+    inventory_host = {"hosts": {host: host_vars}}
+    if group:
+        inventory["all"]["children"][group] = inventory_host
+    else:
+        inventory["all"] = inventory_host
     with tempfile.TemporaryDirectory() as tmpdir:
         ansible_runner.run(
             private_data_dir=tmpdir,
             project_dir=str(HERE.absolute()),
             playbook=playbook,
-            inventory={"all": {"hosts": {host: host_vars}}},
+            inventory=inventory,
         )
 
 
@@ -82,6 +90,9 @@ def run(playbook: "str", host: "str", host_vars: "dict" = None):
     "--playbook", type=click.Choice(playbooks), help="Playbook to run on the host"
 )
 @click.option(
+    "--group", type=click.Choice(["raspberrypi", "nano"]), help="Type of device"
+)
+@click.option(
     "--host-vars",
     metavar="KEY=VAL",
     multiple=True,
@@ -91,13 +102,14 @@ def run(playbook: "str", host: "str", host_vars: "dict" = None):
         "to pass multiple host vars."
     ),
 )
-def cli(playbook: "str", host: "str", host_vars: "list[str]" = None):
-
+def cli(
+    playbook: "str", host: "str", group: "str" = None, host_vars: "list[str]" = None
+):
     host_vars_dict = {}
     for line in host_vars:
         k, v = line.split("=")
         host_vars_dict.update({k: v})
 
-    return run(f"{playbook}.yml", host, host_vars=host_vars_dict)
+    LOG.info(host_vars_dict)
 
-    # host_vars_dict = {k: v for line in host_vars for k, v in line.split("=")}
+    return run(f"{playbook}.yml", host, group=group, host_vars=host_vars_dict)

@@ -1,3 +1,4 @@
+#!/bin/sh
 # Set up Wireguard tunnels for CHI@Edge comms channels
 # Note: it is important for this to be POSIX-compliant, as dhcpcd executes
 # the hook within a limited shell (i.e., not Bash/Zsh)
