@@ -1,7 +1,4 @@
 ---
-- name: Populate service facts
-  ansible.builtin.service_facts:
-
 - name: ensure /etc/network/interfaces is valid
   ansible.builtin.template:
     dest: /etc/network/interfaces

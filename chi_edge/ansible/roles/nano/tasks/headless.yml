@@ -1,9 +1,5 @@
 ---
 # From https://lunar.computer/posts/nvidia-jetson-nano-headless/
-
-- name: Populate service facts
-  ansible.builtin.service_facts:
-
 - name: Change default target to multi-user.target
   file:
     src: /lib/systemd/system/multi-user.target
