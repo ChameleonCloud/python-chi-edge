@@ -21,6 +21,8 @@ import tempfile
 import ansible_runner
 import click
 
+from chi_edge import SUPPORTED_DEVICE_TYPES
+
 LOG = logging.getLogger(__name__)
 HERE = pathlib.Path(__file__).parent
 REQUIREMENTS_FILE = pathlib.Path(HERE, "requirements.yml")
@@ -90,7 +92,7 @@ def run(playbook: "str", host: "str", group: "str" = None, host_vars: "dict" = N
     "--playbook", type=click.Choice(playbooks), help="Playbook to run on the host"
 )
 @click.option(
-    "--group", type=click.Choice(["raspberrypi", "nano"]), help="Type of device"
+    "--group", type=click.Choice(SUPPORTED_DEVICE_TYPES), help="Host grouping to apply"
 )
 @click.option(
     "--host-vars",
@@ -105,11 +107,5 @@ def run(playbook: "str", host: "str", group: "str" = None, host_vars: "dict" = N
 def cli(
     playbook: "str", host: "str", group: "str" = None, host_vars: "list[str]" = None
 ):
-    host_vars_dict = {}
-    for line in host_vars:
-        k, v = line.split("=")
-        host_vars_dict.update({k: v})
-
-    LOG.info(host_vars_dict)
-
+    host_vars_dict = dict([tuple(line.split("=")) for line in host_vars])
     return run(f"{playbook}.yml", host, group=group, host_vars=host_vars_dict)
