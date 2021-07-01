@@ -74,6 +74,7 @@ def run(playbook: "str", host: "str", group: "str" = None, host_vars: "dict" = N
         ansible_runner.run(
             private_data_dir=tmpdir,
             project_dir=str(HERE.absolute()),
+            roles_path=[str(ROLES_PATH.absolute())],
             playbook=playbook,
             inventory=inventory,
         )
