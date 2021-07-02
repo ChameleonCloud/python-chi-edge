@@ -1,0 +1,12 @@
+{
+    "runtimes": {
+        "nvidia": {
+            "path": "/usr/bin/nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    },
+    "log-opts": {
+        "max-file": "5",
+        "max-size": "50m"
+    }
+}
