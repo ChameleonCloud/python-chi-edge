@@ -4,5 +4,7 @@
   roles:
     - common
     - { role: "nano", when: ( 'nano' in group_names ) }
+    - { role: "headless", when: ( 'nano' in group_names ) }
+    - { role: "headless", when: ( 'ubuntu-18.04' in group_names ) }
     - wireguard
     - docker

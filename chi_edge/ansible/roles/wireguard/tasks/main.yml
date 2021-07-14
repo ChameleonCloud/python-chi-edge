@@ -1,9 +1,9 @@
 ---
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
 - name: install wireguard
   import_tasks: install_wg.yml
-
-- name: remove networkmanager
-  import_tasks: networkmanager.yml
 
 - name: setup ifaces
   import_tasks: setup_wg.yml
