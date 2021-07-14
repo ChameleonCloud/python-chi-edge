@@ -15,7 +15,7 @@
 SUPPORTED_DEVICE_TYPES = (
     "raspberrypi",
     "nano",
-    "ubuntu-18.04-amd64"
+    "ubuntu-18.04-amd64",
 )
 
 # TODO(jason): this is a bit gross, but I'm not sure what the better option
