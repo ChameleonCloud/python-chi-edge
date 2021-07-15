@@ -7,6 +7,7 @@
     mode: "0644"
     validate: /sbin/ifup -i %s -n -v --all
   notify: reboot system
+  when: "'networking.service' in services"
 
 - name: Enable systemd-networkd
   ansible.builtin.systemd:
