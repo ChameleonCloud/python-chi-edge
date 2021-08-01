@@ -28,7 +28,7 @@ include = ["chi_edge/ansible/**"]
 [tool.poetry.dependencies]
 python = "^3.6.2"
 ansible = "^4.0.0"
-ansible-runner = "^1.4.7"
+ansible-runner = ">=1.4.7,<3.0.0"
 click = "^8.0.1"
 
 [tool.poetry.dev-dependencies]
