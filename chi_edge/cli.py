@@ -13,7 +13,7 @@
 # limitations under the License.
 import click
 
-from chi_edge import ansible, SUPPORTED_DEVICE_TYPES, VIRTUAL_SITE_INTERNAL_ADDRESS
+from chi_edge import SUPPORTED_DEVICE_TYPES, VIRTUAL_SITE_INTERNAL_ADDRESS, ansible
 
 
 @click.group("edge")
@@ -114,6 +114,12 @@ def bootstrap(
         # Jetson Nanos use L4T distribution based on Ubuntu 18.04, which
         # doesn't have docker-ce built for stable.
         host_vars.setdefault("docker_package", "docker")
+        # geerlingguy.docker role defaults to amd64
+        host_vars.setdefault("docker_apt_arch", "arm64")
+
+    if device_type == "raspberrypi":
+        # geerlingguy.docker role defaults to amd64
+        host_vars.setdefault("docker_apt_arch", "arm64")
 
     return ansible.run(
         "setup_edge_dev.yml", host, group=device_type, host_vars=host_vars
