@@ -20,6 +20,11 @@
     name: python3-venv
     state: present
 
+- name: Install Docker dependencies
+  ansible.builtin.package:
+    name: libffi-dev
+    state: present
+
 - name: setup venv and install six
   ansible.builtin.pip:
     name: six
