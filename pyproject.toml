@@ -18,7 +18,7 @@ name = "python-chi-edge"
 packages = [
     { include = "chi_edge" }
 ]
-version = "0.0.2"
+version = "0.0.3"
 description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
 authors = [
     "Chameleon Project <contact@chameleoncloud.org>"
