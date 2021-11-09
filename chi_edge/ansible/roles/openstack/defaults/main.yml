@@ -6,10 +6,12 @@ container_config_directory: "/var/lib/kolla/config_files"
 
 database_connection_recycle_time: 10
 database_max_pool_size: 1
+# database_user:
 
 keystone_admin_url: "http://{{ site_internal_vip }}:35357"
 keystone_internal_url: "http://{{ site_internal_vip }}:5000"
 keystone_project_name: device_contributors
+# keystone_user:
 
 node_config_directory: /etc/kolla
 

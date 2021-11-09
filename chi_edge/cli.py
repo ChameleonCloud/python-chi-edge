@@ -23,7 +23,7 @@ def cli():
 
 
 @cli.command(help="Bootstrap an edge device for enrollment into CHI@Edge")
-@click.argument("host")
+@click.argument("host", required=False)
 @click.option(
     "--device-type",
     required=True,
@@ -100,16 +100,16 @@ def cli():
     ),
 )
 def bootstrap(
-    host: "str",
-    device_type=None,
-    enrollment_type=None,
+    host: "str" = None,
+    device_type: "str" = None,
+    enrollment_type: "str" = None,
     enrollment_conf=None,
-    network_interface=None,
-    mgmt_channel_address=None,
-    user_channel_address=None,
-    sudo_password=None,
-    sudo=None,
-    extra_vars=None,
+    network_interface: "str" = None,
+    mgmt_channel_address: "str" = None,
+    user_channel_address: "str" = None,
+    sudo_password: "str" = None,
+    sudo: "bool" = None,
+    extra_vars: "dict" = None,
 ):
     if extra_vars:
         extra_vars_dict = dict([tuple(line.split("=") for line in extra_vars)])
@@ -136,6 +136,14 @@ def bootstrap(
     for key, value in cli_vars.items():
         if value is not None:
             host_vars[key] = value
+
+    if host is None:
+        host = host_vars.get("ansible_hostname")
+        if host is None:
+            raise ValueError(
+                "Please provide the target host, either in the enrollment config or as "
+                "a command line argument."
+            )
 
     if sudo:
         host_vars.setdefault("ansible_become", True)
