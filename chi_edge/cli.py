@@ -102,6 +102,7 @@ def bootstrap(
         "mgmt_ipv4": mgmt_channel_address,
         "user_ipv4": user_channel_address,
         "site_internal_vip": VIRTUAL_SITE_INTERNAL_ADDRESS,
+        "rpc_password": "",
         **extra_vars_dict,
     }
 

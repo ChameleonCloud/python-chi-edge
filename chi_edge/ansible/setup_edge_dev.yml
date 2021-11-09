@@ -6,3 +6,5 @@
     - { role: "nano", when: ( 'nano' in group_names ) }
     - wireguard
     - docker
+    - { role: "zun", when: True }
+    - { role: "neutron", when: True }

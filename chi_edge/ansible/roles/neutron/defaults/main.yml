@@ -1,0 +1,39 @@
+---
+neutron_logging_debug: "{{ openstack_logging_debug }}"
+
+# Set legacy iptables to allow kernels not supporting iptables-nft
+neutron_legacy_iptables: "no"
+
+neutron_keystone_user: "{{ keystone_user }}"
+neutron_keystone_password: "{{ keystone_password }}"
+neutron_database_user: "{{ database_user }}"
+neutron_database_password: "{{ database_password }}"
+
+neutron_tag: "{{ openstack_tag }}"
+neutron_openvswitch_agent_tag: "{{ neutron_tag }}"
+neutron_openvswitch_agent_image_full: ""
+
+neutron_services:
+  neutron-openvswitch-agent:
+    container_name: "neutron_openvswitch_agent"
+    image: "{{ neutron_openvswitch_agent_image_full }}"
+    privileged: True
+    environment:
+      KOLLA_LEGACY_IPTABLES: "{{ neutron_legacy_iptables | bool | lower }}"
+    volumes:
+      - "{{ node_config_directory }}/neutron-openvswitch-agent/:{{ container_config_directory }}/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+      - "/lib/modules:/lib/modules:ro"
+      - "/run/openvswitch:/run/openvswitch:shared"
+      - "kolla_logs:/var/log/kolla/"
+    healthcheck:
+      interval: 30
+      retries: 3
+      start_period: 5
+      test:
+        [
+          "CMD-SHELL",
+          "healthcheck_port neutron-openvswitch-agent {{ om_rpc_port }}",
+        ]
+      timeout: 30

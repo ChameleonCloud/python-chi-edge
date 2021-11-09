@@ -1,0 +1,21 @@
+---
+config_owner_user: kolla
+config_owner_group: kolla
+
+container_config_directory: "/var/lib/kolla/config_files"
+
+database_connection_recycle_time: 10
+database_max_pool_size: 1
+
+keystone_admin_url: "http://{{ site_internal_vip }}:35357"
+keystone_internal_url: "http://{{ site_internal_vip }}:5000"
+keystone_project_name: device_contributors
+
+node_config_directory: /etc/kolla
+
+openstack_logging_debug: False
+openstack_region_name: CHI@Edge
+openstack_cacert: ""
+openstack_tag: train
+
+rpc_user: rabbit
