@@ -35,7 +35,7 @@ def cli():
 )
 @click.option(
     "--enrollment-type",
-    type=click.Choice("legacy-openstack"),
+    type=click.Choice(["legacy-openstack"]),
     default="legacy-openstack",
     help=(
         "Type of enrollment to perform. This will affect how your device is integrated "
@@ -63,7 +63,6 @@ def cli():
 @click.option(
     "--mgmt-channel-address",
     metavar="IPV4",
-    required=True,
     help=(
         "The address assigned to the device on the management channel. If "
         "you do not know what this is, ask the edge site operators."
@@ -72,7 +71,6 @@ def cli():
 @click.option(
     "--user-channel-address",
     metavar="IPV4",
-    required=True,
     help=(
         "The address assigned to the device on the user channel. If "
         "you do not know what this is, ask the edge site operators."
@@ -119,17 +117,25 @@ def bootstrap(
         extra_vars_dict = {}
 
     host_vars = {
-        "iface": network_interface,
-        "mgmt_ipv4": mgmt_channel_address,
-        "user_ipv4": user_channel_address,
         "site_internal_vip": VIRTUAL_SITE_INTERNAL_ADDRESS,
         "enrollment_type": enrollment_type,
         **extra_vars_dict,
     }
 
+    # Prefer to use enrollment config file to set most additional vars
     if enrollment_conf:
         for key, value in yaml.safe_load(enrollment_conf).items():
             host_vars.setdefault(key, value)
+
+    # Some special (legacy) vars are set via CLI if provided
+    cli_vars = {
+        "iface": network_interface,
+        "mgmt_ipv4": mgmt_channel_address,
+        "user_ipv4": user_channel_address,
+    }
+    for key, value in cli_vars.items():
+        if value is not None:
+            host_vars[key] = value
 
     if sudo:
         host_vars.setdefault("ansible_become", True)
