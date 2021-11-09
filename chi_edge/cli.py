@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import click
+import yaml
 
 from chi_edge import SUPPORTED_DEVICE_TYPES, VIRTUAL_SITE_INTERNAL_ADDRESS, ansible
 
@@ -30,6 +31,24 @@ def cli():
     help=(
         "Type of device to bootstrap. Device needs are very specific; only "
         "the device types listed are supported."
+    ),
+)
+@click.option(
+    "--enrollment-type",
+    type=click.Choice("legacy-openstack"),
+    default="legacy-openstack",
+    help=(
+        "Type of enrollment to perform. This will affect how your device is integrated "
+        "with the edge testbed, and what interfaces and capabilities are provided to "
+        "end users."
+    ),
+)
+@click.option(
+    "--enrollment-conf",
+    type=click.File(),
+    help=(
+        "An optional YAML enrollment configuration file. This should be in your "
+        "posession for certain types of enrollment."
     ),
 )
 @click.option(
@@ -85,6 +104,8 @@ def cli():
 def bootstrap(
     host: "str",
     device_type=None,
+    enrollment_type=None,
+    enrollment_conf=None,
     network_interface=None,
     mgmt_channel_address=None,
     user_channel_address=None,
@@ -102,9 +123,13 @@ def bootstrap(
         "mgmt_ipv4": mgmt_channel_address,
         "user_ipv4": user_channel_address,
         "site_internal_vip": VIRTUAL_SITE_INTERNAL_ADDRESS,
-        "rpc_password": "",
+        "enrollment_type": enrollment_type,
         **extra_vars_dict,
     }
+
+    if enrollment_conf:
+        for key, value in yaml.safe_load(enrollment_conf).items():
+            host_vars.setdefault(key, value)
 
     if sudo:
         host_vars.setdefault("ansible_become", True)

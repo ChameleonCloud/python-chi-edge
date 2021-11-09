@@ -1,10 +1,10 @@
 ---
-- name: setup dependencies
+- name: Configure edge services
   hosts: all
   roles:
     - common
     - { role: "nano", when: ( 'nano' in group_names ) }
     - wireguard
     - docker
-    - { role: "zun", when: True }
-    - { role: "neutron", when: True }
+    - { role: "zun", when: enrollment_type == 'legacy-openstack' }
+    - { role: "neutron", when: enrollment_type == 'legacy-openstack' }

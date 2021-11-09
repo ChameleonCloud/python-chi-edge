@@ -660,7 +660,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.2"
-content-hash = "5be484799f52c7c1c8336a4de344cdf538baff9643199a3ad021787cfd3fe999"
+content-hash = "426dad6321ebd4daf6ad888c404d4b11c86c9cc92f92e0dc13c776956accfbc2"
 
 [metadata.files]
 ansible = [
