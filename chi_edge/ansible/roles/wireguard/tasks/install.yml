@@ -3,8 +3,16 @@
   ansible.builtin.package:
     name: dkms
     state: present
+  when: 'nano' in group_names
 
-- name: Install wireguard
+- name: install wireguard (no kernel support)
   ansible.builtin.package:
     name: wireguard
     state: present
+  when: 'nano' in group_names
+
+- name: install wireguard (with kernel support)
+  ansible.builtin.package:
+    name: wireguard-tools
+    state: present
+  when: 'nano' not in group_names
