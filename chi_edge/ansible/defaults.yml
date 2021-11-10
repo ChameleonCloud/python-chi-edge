@@ -28,7 +28,9 @@ node_config_directory: /etc/kolla
 openstack_logging_debug: False
 openstack_region_name: CHI@Edge
 openstack_cacert: ""
-openstack_tag: train
+openstack_release: train
+# Add ARM64-specific suffix, if necessary
+openstack_tag: "{{ openstack_release }}{% if ansible_architecture == 'arm64' %}-aarch64{% endif %}"
 
 rpc_user: rabbit
 rpc_port: 5672
