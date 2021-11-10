@@ -39,7 +39,6 @@
     dest_path: "{{ wireguard_config_dir }}/{{ item.key }}.key"
   ansible.builtin.script:
     cmd: "gen_key.sh {{ dest_path }} {{ item.value.private_key | default('') }}"
-    creates: "{{ dest_path }}"
   with_dict: "{{ wireguard_tunnels }}"
   changed_when: "{{ private_keys.results | selectattr('rc', 'equalto', 2) | list | length }}"
   register: private_keys
