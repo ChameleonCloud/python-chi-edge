@@ -4,7 +4,11 @@
 # this is used as the saved key; otherwise, one is generated via `wg genkey`.
 privkey="${2:-}"
 if [ -n "$privkey" ]; then
-  privkey="$(wg genkey)"
+  if [ -f "$1" ]; then
+    privkey="$(cat "$1")"
+  else
+    privkey="$(wg genkey)"
+  fi
 fi
 code=0
 if [ -f "$1" ]; then
