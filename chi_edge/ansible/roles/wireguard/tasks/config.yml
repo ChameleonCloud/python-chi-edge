@@ -6,6 +6,14 @@
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
+- name: setup wg_up.sh helper
+  ansible.builtin.template:
+    src: wg_up.sh
+    dest: /usr/local/sbin/wg_up.sh
+    mode: "0700"
+    owner: root
+    group: root
+
 - name: setup dhcpcd hook
   ansible.builtin.copy:
     dest: "/usr/lib/dhcpcd/dhcpcd-hooks/40-chameleon"
