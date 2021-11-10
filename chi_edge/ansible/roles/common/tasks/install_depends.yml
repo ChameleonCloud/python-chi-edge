@@ -15,18 +15,14 @@
     link: /usr/bin/python
     path: /usr/bin/python3
 
-- name: Install python3-venv
-  ansible.builtin.package:
-    name: python3-venv
-    state: present
-
 - name: Install Docker dependencies
   ansible.builtin.package:
     name: libffi-dev
     state: present
 
-- name: setup venv and install six
+- name: Install pip packages
   ansible.builtin.pip:
-    name: six
-    virtualenv: /etc/ansible/venv
-    virtualenv_command: python3 -m venv
+    name: "{{ item }}"
+  loop:
+    - docker
+    - six
