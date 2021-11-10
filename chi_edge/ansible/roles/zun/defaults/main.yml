@@ -8,9 +8,9 @@ zun_database_password: "{{ database_password }}"
 
 zun_tag: "{{ openstack_tag }}"
 zun_compute_tag: "{{ zun_tag }}"
-zun_compute_image_full: "docker.chameleoncloud.org/{{ base_distro }}-source-zun-compute:{{ zun_compute_tag }}"
+zun_compute_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-zun-compute:{{ zun_compute_tag }}"
 zun_cni_daemon_tag: "{{ zun_tag }}"
-zun_cni_daemon_image_full: "docker.chameleoncloud.org/{{ base_distro }}-source-zun-cni-daemon:{{ zun_cni_daemon_tag }}"
+zun_cni_daemon_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-zun-cni-daemon:{{ zun_cni_daemon_tag }}"
 
 zun_cni_daemon_port: "9036"
 

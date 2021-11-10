@@ -44,9 +44,9 @@ openvswitch_system_id: "{{ ansible_facts.hostname }}"
 
 openvswitch_tag: "{{ openstack_tag }}"
 openvswitch_db_tag: "{{ openvswitch_tag }}"
-openvswitch_db_image_full: "docker.chameleoncloud.org/kolla/{{ base_distro }}-source-openvswitch-db-server:{{ openvswitch_db_tag }}"
+openvswitch_db_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-openvswitch-db-server:{{ openvswitch_db_tag }}"
 openvswitch_vswitchd_tag: "{{ openvswitch_tag }}"
-openvswitch_vswitchd_image_full: "docker.chameleoncloud.org/kolla/{{ base_distro }}-source-openvswitch-vswitchd:{{ openvswitch_vswitchd_tag }}"
+openvswitch_vswitchd_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-openvswitch-vswitchd:{{ openvswitch_vswitchd_tag }}"
 
 ovsdb_port: "6640"
 ovsdb_timeout: 10

@@ -9,8 +9,10 @@ database_connection_recycle_time: 10
 database_max_pool_size: 1
 # database_user:
 
+docker_registry: docker.chameleoncloud.org
+docker_namespace: kolla
 docker_common_options:
-  auth_registry: docker.chameleoncloud.org
+  auth_registry: "{{ docker_registry }}"
   auth_username: registry
   auth_password: "kaQBdG9PRwlpTzknnhfGmvPf" # Already publicly disclosed
   environment:
