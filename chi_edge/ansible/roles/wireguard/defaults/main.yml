@@ -26,4 +26,4 @@ wireguard_default_tunnels:
           - 10.0.1.0/24
 wireguard_extra_tunnels: {}
 
-wireguard_tunnels: "{{ wireguard_default_tunnels }} + {{ wireguard_extra_tunnels }}"
+wireguard_tunnels: "{{ wireguard_default_tunnels | combine(wireguard_extra_tunnels) }}"
