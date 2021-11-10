@@ -41,6 +41,7 @@
     cmd: "gen_key.sh {{ dest_path }} {{ item.value.private_key | default('') }}"
     creates: "{{ dest_path }}"
   with_dict: "{{ wireguard_tunnels }}"
+  register: private_keys
 
 - name: configure wg tunnels
   ansible.builtin.template:
@@ -50,7 +51,7 @@
     owner: root
     group: root
   vars:
-    wg_private_key: "{{ item.value.private_key }}"
+    wg_private_key: "{{ private_keys.results[item.key].stdout }}"
     wg_peers: "{{ item.value.peers }}"
   with_dict: "{{ wireguard_tunnels }}"
 

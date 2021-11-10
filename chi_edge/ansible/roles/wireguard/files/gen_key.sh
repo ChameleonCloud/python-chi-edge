@@ -4,3 +4,4 @@
 # this is used as the saved key; otherwise, one is generated via `wg genkey`.
 echo "${2:-$(wg genkey)}" >"$1"
 chmod 400 "$1"
+cat "$1"
