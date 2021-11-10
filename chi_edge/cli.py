@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+
 import click
 import yaml
 
@@ -153,7 +155,9 @@ def bootstrap(
         # geerlingguy.docker role defaults to amd64
         host_vars.setdefault("docker_apt_arch", "arm64")
 
-    with open("ansible/defaults.yml", "r") as f:
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, "ansible/defaults.yml")
+    with open(filename, "r") as f:
         defaults = yaml.safe_load(f)
         for key, value in defaults.items():
             host_vars.setdefault(key, value)
