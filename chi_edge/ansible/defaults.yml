@@ -9,6 +9,13 @@ database_connection_recycle_time: 10
 database_max_pool_size: 1
 # database_user:
 
+docker_common_options:
+  auth_registry: docker.chameleoncloud.org
+  auth_username: registry
+  auth_password: "kaQBdG9PRwlpTzknnhfGmvPf" # Already publicly disclosed
+  environment:
+    KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
+
 keystone_admin_url: "http://{{ site_internal_vip }}:35357"
 keystone_internal_url: "http://{{ site_internal_vip }}:5000"
 keystone_project_name: device_contributors

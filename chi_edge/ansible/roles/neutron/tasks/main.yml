@@ -56,7 +56,6 @@
     image: "{{ item.value.image }}"
     privileged: "{{ item.value.privileged | default(False) }}"
     volumes: "{{ item.value.volumes }}"
-    environment: "{{ item.value.environment | default(omit) }}"
     healthcheck: "{{ item.value.healthcheck | default(omit) }}"
   with_dict: "{{ neutron_services }}"
   notify:

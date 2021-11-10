@@ -6,6 +6,7 @@
   become: true
   kolla_docker:
     action: "recreate_or_restart_container"
+    common_options: "{{ docker_common_options }}"
     name: "{{ service.container_name }}"
     image: "{{ service.image }}"
     environment: "{{ service.environment }}"
@@ -20,6 +21,7 @@
   become: true
   kolla_docker:
     action: "recreate_or_restart_container"
+    common_options: "{{ docker_common_options }}"
     name: "{{ service.container_name }}"
     image: "{{ service.image }}"
     volumes: "{{ service.volumes }}"
@@ -43,6 +45,7 @@
   become: true
   kolla_docker:
     action: "recreate_or_restart_container"
+    common_options: "{{ docker_common_options }}"
     name: "{{ service.container_name }}"
     image: "{{ service.image }}"
     volumes: "{{ service.volumes }}"
