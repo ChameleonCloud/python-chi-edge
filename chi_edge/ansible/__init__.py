@@ -77,6 +77,11 @@ def run(playbook: "str", host: "str", group: "str" = None, host_vars: "dict" = N
             roles_path=[str(ROLES_PATH.absolute())],
             playbook=playbook,
             inventory=inventory,
+            settings={
+                "connection": {
+                    "pipelining": True,
+                },
+            },
         )
 
 
