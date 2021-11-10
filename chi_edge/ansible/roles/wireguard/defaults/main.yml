@@ -1,6 +1,7 @@
 ---
 wireguard_config_dir: /root/.config/chameleon
-wireguard_tunnels:
+
+wireguard_default_tunnels:
   mgmt:
     # TODO: support other than /24
     ipv4: "{{ mgmt_ipv4 }}/24"
@@ -23,3 +24,6 @@ wireguard_tunnels:
         keepalive: True
         allowed_ips:
           - 10.0.1.0/24
+wireguard_extra_tunnels: {}
+
+wireguard_tunnels: "{{ wireguard_default_tunnels }} + {{ wireguard_extra_tunnels }}"
