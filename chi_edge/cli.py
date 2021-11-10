@@ -148,12 +148,6 @@ def bootstrap(
         # Jetson Nanos use L4T distribution based on Ubuntu 18.04, which
         # doesn't have docker-ce built for stable.
         host_vars.setdefault("docker_package", "docker")
-        # geerlingguy.docker role defaults to amd64
-        host_vars.setdefault("docker_apt_arch", "arm64")
-
-    if device_type == "raspberrypi":
-        # geerlingguy.docker role defaults to amd64
-        host_vars.setdefault("docker_apt_arch", "arm64")
 
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "ansible/defaults.yml")
