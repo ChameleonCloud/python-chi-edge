@@ -46,14 +46,14 @@
 - name: configure wg tunnels
   ansible.builtin.template:
     src: tunnel.conf.j2
-    dest: "{{ wireguard_config_dir }}/{{ item.key }}.channel"
+    dest: "{{ wireguard_config_dir }}/{{ item.item.key }}.channel"
     mode: "0700"
     owner: root
     group: root
   vars:
-    wg_private_key: "{{ private_keys.results[item.key].stdout }}"
-    wg_peers: "{{ item.value.peers }}"
-  with_dict: "{{ wireguard_tunnels }}"
+    wg_private_key: "{{ item.stdout }}"
+    wg_peers: "{{ item.item.value.peers }}"
+  with_items: "{{ private_keys.results }}"
 
 - name: bind tunnels to addresses
   ansible.builtin.copy:
