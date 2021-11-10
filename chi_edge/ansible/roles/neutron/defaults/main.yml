@@ -1,0 +1,118 @@
+---
+neutron_logging_debug: "{{ openstack_logging_debug }}"
+
+# Set legacy iptables to allow kernels not supporting iptables-nft
+neutron_legacy_iptables: "no"
+
+neutron_keystone_user: "{{ keystone_user }}"
+neutron_keystone_password: "{{ keystone_password }}"
+neutron_database_user: "{{ database_user }}"
+neutron_database_password: "{{ database_password }}"
+
+neutron_tag: "{{ openstack_tag }}"
+neutron_openvswitch_agent_tag: "{{ neutron_tag }}"
+neutron_openvswitch_agent_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-neutron-openvswitch-agent:{{ neutron_openvswitch_agent_tag }}"
+
+neutron_services:
+  neutron-openvswitch-agent:
+    container_name: "neutron_openvswitch_agent"
+    image: "{{ neutron_openvswitch_agent_image_full }}"
+    privileged: True
+    environment:
+      KOLLA_LEGACY_IPTABLES: "{{ neutron_legacy_iptables | bool | lower }}"
+    volumes:
+      - "{{ node_config_directory }}/neutron-openvswitch-agent/:{{ container_config_directory }}/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+      - "/lib/modules:/lib/modules:ro"
+      - "/run/openvswitch:/run/openvswitch:shared"
+      - "kolla_logs:/var/log/kolla/"
+    healthcheck:
+      interval: 30
+      retries: 3
+      start_period: 5
+      test:
+        [
+          "CMD-SHELL",
+          "healthcheck_port neutron-openvswitch-agent {{ rpc_port }}",
+        ]
+      timeout: 30
+
+# Kuryr
+
+kuryr_logging_debug: "{{ openstack_logging_debug }}"
+
+kuryr_tag: "{{ neutron_tag }}"
+kuryr_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-kuryr-libnetwork:{{ kuryr_tag }}"
+
+kuryr_port: "23750"
+
+kuryr_services:
+  kuryr:
+    container_name: kuryr
+    image: "{{ kuryr_image_full }}"
+    privileged: True
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - "{{ node_config_directory }}/kuryr/:{{ container_config_directory }}/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_os_family == 'Debian' else '' }}"
+      - "/lib/modules:/lib/modules:ro"
+      - "/run:/run:shared"
+      - "/usr/lib/docker:/usr/lib/docker"
+      - "kolla_logs:/var/log/kolla/"
+
+# OpenVSwitch
+
+openvswitch_system_id: "{{ ansible_facts.hostname }}"
+
+openvswitch_tag: "{{ openstack_tag }}"
+openvswitch_db_tag: "{{ openvswitch_tag }}"
+openvswitch_db_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-openvswitch-db-server:{{ openvswitch_db_tag }}"
+openvswitch_vswitchd_tag: "{{ openvswitch_tag }}"
+openvswitch_vswitchd_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-openvswitch-vswitchd:{{ openvswitch_vswitchd_tag }}"
+
+ovsdb_port: "6640"
+ovsdb_timeout: 10
+ovs_datapath: system
+
+openvswitch_services:
+  openvswitch-db-server:
+    container_name: "openvswitch_db"
+    image: "{{ openvswitch_db_image_full }}"
+    volumes:
+      - "{{ node_config_directory }}/openvswitch-db-server/:{{ container_config_directory }}/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+      - "/lib/modules:/lib/modules:ro"
+      - "/run/openvswitch:/run/openvswitch:shared"
+      - "kolla_logs:/var/log/kolla/"
+      - "openvswitch_db:/var/lib/openvswitch/"
+    healthcheck:
+      interval: 30
+      retries: 3
+      start_period: 5
+      test:
+        [
+          "CMD-SHELL",
+          "healthcheck_socket ovsdb-server /run/openvswitch/db.sock",
+        ]
+      timeout: 30
+  openvswitch-vswitchd:
+    container_name: "openvswitch_vswitchd"
+    image: "{{ openvswitch_vswitchd_image_full }}"
+    privileged: True
+    volumes:
+      - "{{ node_config_directory }}/openvswitch-vswitchd/:{{ container_config_directory }}/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+      - "/lib/modules:/lib/modules:ro"
+      - "/run/openvswitch:/run/openvswitch:shared"
+      - "kolla_logs:/var/log/kolla/"
+    healthcheck:
+      interval: 30
+      retries: 3
+      start_period: 5
+      test: ["CMD-SHELL", "ovs-appctl version"]
+      timeout: 30

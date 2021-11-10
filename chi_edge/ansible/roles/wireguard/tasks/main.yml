@@ -1,9 +1,9 @@
 ---
 - name: install wireguard
-  import_tasks: install_wg.yml
+  import_tasks: install.yml
 
 - name: setup ifaces
-  import_tasks: setup_wg.yml
+  import_tasks: config.yml
 
 - name: print commands to run on virtual site
   import_tasks: print_wg_info.yml

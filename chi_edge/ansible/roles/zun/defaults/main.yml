@@ -1,0 +1,57 @@
+---
+zun_logging_debug: "{{ openstack_logging_debug }}"
+
+zun_keystone_user: "{{ keystone_user }}"
+zun_keystone_password: "{{ keystone_password }}"
+zun_database_user: "{{ database_user }}"
+zun_database_password: "{{ database_password }}"
+
+zun_tag: "{{ openstack_tag }}"
+zun_compute_tag: "{{ zun_tag }}"
+zun_compute_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-zun-compute:{{ zun_compute_tag }}"
+zun_cni_daemon_tag: "{{ zun_tag }}"
+zun_cni_daemon_image_full: "{{ docker_registry }}/{{ docker_namespace }}/{{ base_distro }}-source-zun-cni-daemon:{{ zun_cni_daemon_tag }}"
+
+zun_cni_daemon_port: "9036"
+
+zun_services:
+  zun-compute:
+    container_name: zun_compute
+    image: "{{ zun_compute_image_full }}"
+    privileged: True
+    volumes:
+      - "{{ node_config_directory }}/zun-compute/:{{ container_config_directory }}/:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+      - "kolla_logs:/var/log/kolla/"
+      - "/run:/run:shared"
+      - "/usr/lib/docker:/usr/lib/docker"
+      - "/var/lib/docker:/var/lib/docker"
+      - "/lib/modules:/lib/modules:ro"
+      - "/dev:/dev"
+      - "/var/lib/zun:/var/lib/zun"
+    healthcheck:
+      interval: 30
+      retries: 3
+      start_period: 5
+      test: ["CMD-SHELL", "healthcheck_port zun-compute {{ rpc_port }}"]
+      timeout: 30
+  # zun-cni-daemon:
+  #   container_name: zun_cni_daemon
+  #   image: "{{ zun_cni_daemon_image_full }}"
+  #   privileged: True
+  #   volumes:
+  #     - "{{ node_config_directory }}/zun-cni-daemon/:{{ container_config_directory }}/:ro"
+  #     - "/etc/localtime:/etc/localtime:ro"
+  #     - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+  #     - "kolla_logs:/var/log/kolla/"
+  #   healthcheck:
+  #     interval: 30
+  #     retries: 3
+  #     start_period: 5
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "healthcheck_listen zun-cni-daemon {{ zun_cni_daemon_port }}",
+  #       ]
+  #     timeout: 30

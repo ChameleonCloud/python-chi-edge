@@ -1,0 +1,48 @@
+# neutron.conf
+[DEFAULT]
+debug = {{ neutron_logging_debug }}
+
+log_dir = /var/log/kolla/neutron
+
+# NOTE(elemoine): set use_stderr to False or the logs will also be sent to
+# stderr and collected by Docker
+use_stderr = False
+
+rpc_workers = 1
+rpc_state_report_workers = 1
+
+interface_driver = openvswitch
+core_plugin = ml2
+
+transport_url = {{ rpc_transport_url }}
+
+[oslo_concurrency]
+lock_path = /var/lib/neutron/tmp
+
+[agent]
+root_helper = sudo neutron-rootwrap /etc/neutron/rootwrap.conf
+
+[database]
+connection = mysql+pymysql://{{ neutron_database_user }}:{{ neutron_database_password }}@{{ site_internal_vip }}/neutron
+connection_recycle_time = {{ database_connection_recycle_time }}
+max_pool_size = {{ database_max_pool_size }}
+max_retries = -1
+
+[keystone_authtoken]
+www_authenticate_uri = {{ keystone_internal_url }}
+auth_url = {{ keystone_admin_url }}
+auth_type = password
+project_domain_id = default
+user_domain_id = default
+project_name = {{ keystone_project_name }}
+username = {{ neutron_keystone_user }}
+password = {{ neutron_keystone_password }}
+cafile = {{ openstack_cacert }}
+region_name = {{ openstack_region_name }}
+
+[oslo_messaging_notifications]
+transport_url = {{ notify_transport_url }}
+driver = noop
+
+[privsep]
+helper_command=sudo neutron-rootwrap /etc/neutron/rootwrap.conf privsep-helper

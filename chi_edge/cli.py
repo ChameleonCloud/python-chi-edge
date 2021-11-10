@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+
 import click
+import yaml
 
 from chi_edge import SUPPORTED_DEVICE_TYPES, VIRTUAL_SITE_INTERNAL_ADDRESS, ansible
 
@@ -33,6 +36,24 @@ def cli():
     ),
 )
 @click.option(
+    "--enrollment-type",
+    type=click.Choice(["legacy-openstack"]),
+    default="legacy-openstack",
+    help=(
+        "Type of enrollment to perform. This will affect how your device is integrated "
+        "with the edge testbed, and what interfaces and capabilities are provided to "
+        "end users."
+    ),
+)
+@click.option(
+    "--enrollment-conf",
+    type=click.File(),
+    help=(
+        "An optional YAML enrollment configuration file. This should be in your "
+        "posession for certain types of enrollment."
+    ),
+)
+@click.option(
     "--network-interface",
     metavar="DEVICE",
     default="eth0",
@@ -44,7 +65,6 @@ def cli():
 @click.option(
     "--mgmt-channel-address",
     metavar="IPV4",
-    required=True,
     help=(
         "The address assigned to the device on the management channel. If "
         "you do not know what this is, ask the edge site operators."
@@ -53,7 +73,6 @@ def cli():
 @click.option(
     "--user-channel-address",
     metavar="IPV4",
-    required=True,
     help=(
         "The address assigned to the device on the user channel. If "
         "you do not know what this is, ask the edge site operators."
@@ -83,14 +102,16 @@ def cli():
     ),
 )
 def bootstrap(
-    host: "str",
-    device_type=None,
-    network_interface=None,
-    mgmt_channel_address=None,
-    user_channel_address=None,
-    sudo_password=None,
-    sudo=None,
-    extra_vars=None,
+    host: "str" = None,
+    device_type: "str" = None,
+    enrollment_type: "str" = None,
+    enrollment_conf=None,
+    network_interface: "str" = None,
+    mgmt_channel_address: "str" = None,
+    user_channel_address: "str" = None,
+    sudo_password: "str" = None,
+    sudo: "bool" = None,
+    extra_vars: "dict" = None,
 ):
     if extra_vars:
         extra_vars_dict = dict([tuple(line.split("=") for line in extra_vars)])
@@ -98,12 +119,25 @@ def bootstrap(
         extra_vars_dict = {}
 
     host_vars = {
+        "site_internal_vip": VIRTUAL_SITE_INTERNAL_ADDRESS,
+        "enrollment_type": enrollment_type,
+        **extra_vars_dict,
+    }
+
+    # Prefer to use enrollment config file to set most additional vars
+    if enrollment_conf:
+        for key, value in yaml.safe_load(enrollment_conf).items():
+            host_vars.setdefault(key, value)
+
+    # Some special (legacy) vars are set via CLI if provided
+    cli_vars = {
         "iface": network_interface,
         "mgmt_ipv4": mgmt_channel_address,
         "user_ipv4": user_channel_address,
-        "site_internal_vip": VIRTUAL_SITE_INTERNAL_ADDRESS,
-        **extra_vars_dict,
     }
+    for key, value in cli_vars.items():
+        if value is not None:
+            host_vars[key] = value
 
     if sudo:
         host_vars.setdefault("ansible_become", True)
@@ -114,12 +148,13 @@ def bootstrap(
         # Jetson Nanos use L4T distribution based on Ubuntu 18.04, which
         # doesn't have docker-ce built for stable.
         host_vars.setdefault("docker_package", "docker")
-        # geerlingguy.docker role defaults to amd64
-        host_vars.setdefault("docker_apt_arch", "arm64")
 
-    if device_type == "raspberrypi":
-        # geerlingguy.docker role defaults to amd64
-        host_vars.setdefault("docker_apt_arch", "arm64")
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, "ansible/defaults.yml")
+    with open(filename, "r") as f:
+        defaults = yaml.safe_load(f)
+        for key, value in defaults.items():
+            host_vars.setdefault(key, value)
 
     return ansible.run(
         "setup_edge_dev.yml", host, group=device_type, host_vars=host_vars

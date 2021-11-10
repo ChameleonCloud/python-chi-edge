@@ -1,0 +1,14 @@
+[Interface]
+PrivateKey = {{ wg_private_key }}
+
+{% for peer in wg_peers %}
+[Peer]
+PublicKey = {{ peer.public_key }}
+AllowedIPs = {{ peer.allowed_ips | join(', ') }}
+{% if peer.endpoint %}
+Endpoint = 129.114.34.129:51820
+{% endif %}
+{% if peer.keepalive | bool %}
+PersistentKeepalive = 25
+{% endif %}
+{% endfor %}

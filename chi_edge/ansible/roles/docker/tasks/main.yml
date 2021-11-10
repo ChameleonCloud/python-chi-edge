@@ -1,7 +1,4 @@
 ---
-- name: Populate service facts
-  ansible.builtin.service_facts:
-
 - name: create override dir
   ansible.builtin.file:
     path: /etc/systemd/system/docker.service.d/

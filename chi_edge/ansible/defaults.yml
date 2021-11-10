@@ -1,0 +1,36 @@
+---
+base_distro: "{% if 'raspberrypi' in group_names %}debian{% else %}ubuntu{% endif %}"
+config_owner_user: kolla
+config_owner_group: kolla
+
+container_config_directory: "/var/lib/kolla/config_files"
+
+database_connection_recycle_time: 10
+database_max_pool_size: 1
+# database_user:
+
+docker_registry: docker.chameleoncloud.org
+docker_namespace: kolla
+docker_common_options:
+  auth_registry: "{{ docker_registry }}"
+  auth_username: registry
+  auth_password: "kaQBdG9PRwlpTzknnhfGmvPf" # Already publicly disclosed
+  environment:
+    KOLLA_CONFIG_STRATEGY: COPY_ALWAYS
+
+keystone_admin_url: "http://{{ site_internal_vip }}:35357"
+keystone_internal_url: "http://{{ site_internal_vip }}:5000"
+keystone_project_name: device_contributors
+# keystone_user:
+
+node_config_directory: /etc/kolla
+
+openstack_logging_debug: False
+openstack_region_name: CHI@Edge
+openstack_cacert: ""
+openstack_release: train
+# Add ARM64-specific suffix, if necessary
+openstack_tag: "{{ openstack_release }}{% if ansible_architecture == 'aarch64' %}-aarch64{% endif %}"
+
+rpc_user: rabbit
+rpc_port: 5672

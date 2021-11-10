@@ -1,7 +1,4 @@
 ---
-- name: Populate service facts
-  ansible.builtin.service_facts:
-
 - name: remove GUI for headless
   import_tasks: headless.yml
 
