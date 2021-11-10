@@ -1,4 +1,5 @@
 ---
+base_distro: "{% if 'raspberrypi' in group_names %}debian{% else %}ubuntu{% endif %}"
 config_owner_user: kolla
 config_owner_group: kolla
 
