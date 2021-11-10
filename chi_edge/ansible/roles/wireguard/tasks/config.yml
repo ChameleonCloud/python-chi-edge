@@ -1,0 +1,65 @@
+---
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: setup hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: setup dhcpcd hook
+  ansible.builtin.copy:
+    dest: "/usr/lib/dhcpcd/dhcpcd-hooks/40-chameleon"
+    src: dhcpcd-hook
+    owner: root
+    group: root
+    mode: 0744
+  when: "'dhcpcd' in services"
+  notify: reboot system
+
+- name: setup networkd-dispatcher hook
+  ansible.builtin.copy:
+    dest: "/usr/lib/networkd-dispatcher/routable.d/40-chameleon"
+    src: networkd-dispatcher-hook
+    owner: root
+    group: root
+    mode: 0744
+  when: "'networkd-dispatcher.service' in services"
+  notify: reboot system
+
+- name: generate keys
+  vars:
+    dest_path: "{{ wireguard_config_dir }}/{{ item.key }}.key"
+  ansible.builtin.script:
+    cmd: "gen_key.sh {{ dest_path }} {{ item.value.private_key | default('') }}"
+    creates: "{{ dest_path }}"
+  with_dict: "{{ wireguard_tunnels }}"
+
+- name: configure wg tunnels
+  ansible.builtin.template:
+    src: tunnel.conf.j2
+    dest: "{{ wireguard_config_dir }}/{{ item.key }}.channel"
+    mode: "0700"
+    owner: root
+    group: root
+  vars:
+    wg_private_key: "{{ item.value.private_key }}"
+    wg_peers: "{{ item.value.peers }}"
+  with_dict: "{{ wireguard_tunnels }}"
+
+- name: bind tunnels to addresses
+  ansible.builtin.copy:
+    content: "{{ item.value.ipv4 }}"
+    dest: "{{ wireguard_config_dir }}/{{ item.key }}.ipv4"
+  with_dict: "{{ wireguard_tunnels }}"
+
+- name: register additional routes
+  ansible.builtin.copy:
+    content: "{{ item.value.routes | default([]) | join('\n') }}"
+    dest: "{{ wireguard_config_dir }}/{{ item.key }}.routes"
+  with_dict: "{{ wireguard_tunnels }}"
+  when:
+    - item.value.routes is defined
+    - item.value.routes is not empty
+
+- name: force reboot if needed
+  meta: flush_handlers
