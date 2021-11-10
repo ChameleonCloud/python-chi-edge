@@ -68,7 +68,7 @@
   with_dict: "{{ wireguard_tunnels }}"
   when:
     - item.value.routes is defined
-    - item.value.routes is not empty
+    - item.value.routes | length
 
 - name: force reboot if needed
   meta: flush_handlers
