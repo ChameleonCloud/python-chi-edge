@@ -40,8 +40,8 @@
   ansible.builtin.script:
     cmd: "gen_key.sh {{ dest_path }} {{ item.value.private_key | default('') }}"
   with_dict: "{{ wireguard_tunnels }}"
-  changed_when: private_keys.results | selectattr('rc', 'equalto', 2) | list | length
-  register: private_keys
+  changed_when: private_key.rc == 2
+  register: private_key
 
 - name: configure wg tunnels
   ansible.builtin.template:
@@ -53,7 +53,7 @@
   vars:
     wg_private_key: "{{ item.stdout }}"
     wg_peers: "{{ item.item.value.peers }}"
-  with_items: "{{ private_keys.results }}"
+  with_items: "{{ private_key.results }}"
 
 - name: bind tunnels to addresses
   ansible.builtin.copy:
