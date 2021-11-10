@@ -153,6 +153,11 @@ def bootstrap(
         # geerlingguy.docker role defaults to amd64
         host_vars.setdefault("docker_apt_arch", "arm64")
 
+    with open("ansible/defaults.yml", "r") as f:
+        defaults = yaml.safe_load(f)
+        for key, value in defaults.items():
+            host_vars.setdefault(key, value)
+
     return ansible.run(
         "setup_edge_dev.yml", host, group=device_type, host_vars=host_vars
     )
