@@ -1,6 +1,8 @@
 ---
 - name: Configure edge services
   hosts: all
+  pre_tasks:
+    - ansible.builtin.service_facts:
   roles:
     - common
     - { role: "nano", when: ( 'nano' in group_names ) }

@@ -32,7 +32,7 @@ zun_services:
       interval: 30
       retries: 3
       start_period: 5
-      test: ["CMD-SHELL", "healthcheck_port zun-compute {{ om_rpc_port }}"]
+      test: ["CMD-SHELL", "healthcheck_port zun-compute {{ rpc_port }}"]
       timeout: 30
   zun-cni-daemon:
     container_name: zun_cni_daemon

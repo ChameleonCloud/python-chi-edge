@@ -34,6 +34,6 @@ neutron_services:
       test:
         [
           "CMD-SHELL",
-          "healthcheck_port neutron-openvswitch-agent {{ om_rpc_port }}",
+          "healthcheck_port neutron-openvswitch-agent {{ rpc_port }}",
         ]
       timeout: 30

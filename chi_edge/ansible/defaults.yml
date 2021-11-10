@@ -22,3 +22,4 @@ openstack_cacert: ""
 openstack_tag: train
 
 rpc_user: rabbit
+rpc_port: 5672
