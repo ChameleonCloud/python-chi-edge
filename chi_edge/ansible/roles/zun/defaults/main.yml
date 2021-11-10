@@ -36,22 +36,22 @@ zun_services:
       start_period: 5
       test: ["CMD-SHELL", "healthcheck_port zun-compute {{ rpc_port }}"]
       timeout: 30
-  zun-cni-daemon:
-    container_name: zun_cni_daemon
-    image: "{{ zun_cni_daemon_image_full }}"
-    privileged: True
-    volumes:
-      - "{{ node_config_directory }}/zun-cni-daemon/:{{ container_config_directory }}/:ro"
-      - "/etc/localtime:/etc/localtime:ro"
-      - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
-      - "kolla_logs:/var/log/kolla/"
-    healthcheck:
-      interval: 30
-      retries: 3
-      start_period: 5
-      test:
-        [
-          "CMD-SHELL",
-          "healthcheck_listen zun-cni-daemon {{ zun_cni_daemon_port }}",
-        ]
-      timeout: 30
+  # zun-cni-daemon:
+  #   container_name: zun_cni_daemon
+  #   image: "{{ zun_cni_daemon_image_full }}"
+  #   privileged: True
+  #   volumes:
+  #     - "{{ node_config_directory }}/zun-cni-daemon/:{{ container_config_directory }}/:ro"
+  #     - "/etc/localtime:/etc/localtime:ro"
+  #     - "{{ '/etc/timezone:/etc/timezone:ro' if ansible_facts.os_family == 'Debian' else '' }}"
+  #     - "kolla_logs:/var/log/kolla/"
+  #   healthcheck:
+  #     interval: 30
+  #     retries: 3
+  #     start_period: 5
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "healthcheck_listen zun-cni-daemon {{ zun_cni_daemon_port }}",
+  #       ]
+  #     timeout: 30
