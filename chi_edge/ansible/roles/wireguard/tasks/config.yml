@@ -31,6 +31,11 @@
   when: "'networkd-dispatcher.service' in services"
   notify: reboot system
 
+- name: create config dir
+  ansible.builtin.file:
+    name: "{{ wireguard_config_dir }}"
+    state: directory
+
 - name: generate keys
   vars:
     dest_path: "{{ wireguard_config_dir }}/{{ item.key }}.key"
