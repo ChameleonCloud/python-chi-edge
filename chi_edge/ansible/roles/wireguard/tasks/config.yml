@@ -42,8 +42,9 @@
   ansible.builtin.script:
     cmd: "gen_key.sh {{ dest_path }} {{ item.value.private_key | default('') }}"
   with_dict: "{{ wireguard_tunnels }}"
-  changed_when: private_key.rc == 2
   register: private_key
+  failed_when: private_key.rc == 1 or private_key.rc > 2
+  changed_when: private_key.rc == 2
 
 - name: configure wg tunnels
   ansible.builtin.template:
@@ -56,21 +57,24 @@
     wg_private_key: "{{ item.stdout }}"
     wg_peers: "{{ item.item.value.peers }}"
   with_items: "{{ private_key.results }}"
+  notify: reboot system
 
 - name: bind tunnels to addresses
   ansible.builtin.copy:
     content: "{{ item.value.ipv4 }}"
     dest: "{{ wireguard_config_dir }}/{{ item.key }}.ipv4"
   with_dict: "{{ wireguard_tunnels }}"
+  notify: reboot system
 
 - name: register additional routes
-  ansible.builtin.copy:
-    content: "{{ item.value.routes | default([]) | join('\n') }}"
+  ansible.builtin.template:
+    src: routes.j2
     dest: "{{ wireguard_config_dir }}/{{ item.key }}.routes"
   with_dict: "{{ wireguard_tunnels }}"
   when:
     - item.value.routes is defined
     - item.value.routes | length
+  notify: reboot system
 
 - name: force reboot if needed
   meta: flush_handlers
