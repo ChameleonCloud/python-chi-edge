@@ -224,8 +224,10 @@ def bake(
         json.dump(config, f)
     if image:
         cp.cp(["config.json"], f"{image}/config.json")
+        print("Successfully patched image")
+    else:
+        print("Created 'config.json'")
 
-    print("Successfully patched image")
 
 def doni_client():
     return adapter.Adapter(
