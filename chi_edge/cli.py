@@ -11,13 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 
+import chi
 import click
+import json
+import os
 import yaml
 
 from chi_edge import SUPPORTED_DEVICE_TYPES, VIRTUAL_SITE_INTERNAL_ADDRESS, ansible
 
+from chi_edge.vendor.FATtools import cp
+
+from keystoneauth1 import adapter
 
 @click.group("edge")
 def cli():
@@ -159,3 +164,71 @@ def bootstrap(
     return ansible.run(
         "setup_edge_dev.yml", host, group=device_type, host_vars=host_vars
     )
+
+
+@cli.command(help="Bake a balena image")
+@click.argument("device_uuid")
+@click.option(
+    "--image",
+    metavar="IMAGE",
+    help=(
+        "Path to the raw disk image to configure. This should be a `.img` "
+        "file. If not specified, `config.json` will be created, but not "
+        "copied anywhere."
+    ),
+)
+def bake(
+    device_uuid: "str" = None,
+    image: "str" = None,
+):
+    # Ensure we do not overwrite a `config.json` file on the user's system
+    if os.path.isfile("config.json"):
+        print("'config.json' already exists!")
+        return
+
+    # Check for device in doni
+    doni = doni_client()
+    hardware = doni.get(f"/v1/hardware/{device_uuid}/").json()
+    balena_workers = [
+        worker for worker in hardware["workers"]
+        if worker["worker_type"] == "balena"
+    ]
+    if not balena_workers:
+        print(f"Expected to find 1 balena worker, found {len(balena_workers)}")
+        return
+    balena_worker = balena_workers[0]["state_details"]
+
+    # Copy existing config file. For an unconfigured OS, it seems this
+    # just contains `deviceType`
+    if image:
+        cp.cp([f"{image}/config.json"], "config.json")
+        with open("config.json") as f:
+            config = json.load(f)
+    else:
+        config = {}
+
+    # Copy over needed keys to config
+    config["uuid"] = device_uuid.replace("-", "").lower()
+    config["apiKey"] = balena_worker["device_api_key"]
+    config["applicationId"] = balena_worker["fleet_id"]
+    config["appUpdatePollInterval"] = "60000"
+    config["listenPort"] = "48484"
+    config["vpnPort"] = "443"
+    config["apiEndpoint"] = "https://api.balena-cloud.com"
+    config["vpnEndpoint"] = "vpn.balena-cloud.com"
+    config["registryEndpoint"] = "registry2.balena-cloud.com"
+    config["deltaEndpoint"] = "https://delta.balena-cloud.com"
+
+    # Put config data back into image
+    with open("config.json", "w") as f:
+        json.dump(config, f)
+    if image:
+        cp.cp(["config.json"], f"{image}/config.json")
+        print("Successfully patched image")
+    else:
+        print("Created 'config.json'")
+
+
+def doni_client():
+    return adapter.Adapter(
+        chi.session(), interface="public", service_type="inventory")
