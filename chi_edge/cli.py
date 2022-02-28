@@ -19,51 +19,68 @@ import click
 import yaml
 from keystoneauth1 import adapter
 
-from chi_edge import SUPPORTED_DEVICE_TYPES
+from chi_edge import SUPPORTED_MACHINE_NAMES
 from chi_edge.vendor.FATtools import cp
 
 
-@click.group("edge")
+@click.group()
 def cli():
     pass
 
 
-@cli.command(help="Register an edge device for enrollment into CHI@Edge")
-@click.argument("host")
+@cli.command(short_help="register a new device")
+@click.argument("device_name")
 @click.option(
-    "--device-type",
+    "--machine-name",
     required=True,
-    type=click.Choice(SUPPORTED_DEVICE_TYPES),
-    help=(
-        "Type of device to bootstrap. Device needs are very specific; only "
-        "the device types listed are supported."
-    ),
+    type=click.Choice(SUPPORTED_MACHINE_NAMES.keys()),
+    help="type of device",
 )
 @click.option(
-    "--enrollment-type",
-    type=click.Choice(["legacy-openstack"]),
-    default="legacy-openstack",
-    help=(
-        "Type of enrollment to perform. This will affect how your device is integrated "
-        "with the edge testbed, and what interfaces and capabilities are provided to "
-        "end users."
-    ),
-)
-@click.option(
-    "--enrollment-conf",
-    type=click.File(),
-    help=(
-        "An optional YAML enrollment configuration file. This should be in your "
-        "posession for certain types of enrollment."
-    ),
+    "--contact-email",
+    required=True,
+    metavar="EMAIL",
+    help="a contact email for the owner of the device",
 )
 def register(
-    device_type: "str" = None,
+    device_name: "str",
+    machine_name: "str" = None,
 ):
+    """Register a device on the CHI@Edge testbed as DEVICE_NAME.
+
+    This is the first step to enrolling an edge device into the testbed and will result
+    in a configuration record for your device being added to the testbed registry. The
+    testbed will generate per-device configuration as a result of this registration,
+    which you can then use to "bake" a generic base OS image for your target device
+    (see: bake command.)
+
+    As a result of registration, your device will be issued a UUID, which you can use
+    to interact with the testbed via other SDK methods.
+
+    \b
+    Supported devices
+    -----------------
+
+    Currently a limited number of machine names (types/classes of devices) are supported:
+
+    \b
+      raspberrypi3-64: Raspberry Pi 3 (using 64bit OS)
+      raspberrypi4-64: Raspberry Pi 4 (using 64bit OS)
+
+    \b
+    Naming your device
+    ------------------
+
+    Every device registered on the testbed requires a machine-friendly name. This must
+    be unique on the testbed; for help choosing a name with maximum utility, please
+    refer to the enrollment documentation:
+    https://chameleoncloud.gitbook.io/chi-edge/device-enrollment/edge-sdk
+
+    """
     pass
 
 
-@cli.command(help="Bake a balena image")
+@cli.command(short_help="configure an OS image for a registered device")
 @click.argument("device_uuid")
 @click.option(
     "--image",
@@ -75,13 +92,12 @@ def register(
     ),
 )
 def bake(
-    device_uuid: "str" = None,
+    device_uuid: "str",
     image: "str" = None,
 ):
     # Ensure we do not overwrite a `config.json` file on the user's system
     if os.path.isfile("config.json"):
-        print("'config.json' already exists!")
-        return
+        raise click.ClickException("'config.json' already exists!")
 
     # Check for device in doni
     doni = doni_client()
@@ -90,8 +106,10 @@ def bake(
         worker for worker in hardware["workers"] if worker["worker_type"] == "balena"
     ]
     if not balena_workers:
-        print(f"Expected to find 1 balena worker, found {len(balena_workers)}")
-        return
+        raise click.ClickException(
+            "Device is not enrolled with support for Balena, you may need to attempt "
+            "registration again"
+        )
     balena_worker = balena_workers[0]["state_details"]
 
     # Copy existing config file. For an unconfigured OS, it seems this
@@ -108,6 +126,7 @@ def bake(
     config["apiKey"] = balena_worker["device_api_key"]
     config["applicationId"] = balena_worker["fleet_id"]
     config["appUpdatePollInterval"] = "60000"
+    # This is the default Balena supervisor listen port
     config["listenPort"] = "48484"
     config["vpnPort"] = "443"
     config["apiEndpoint"] = "https://api.balena-cloud.com"
