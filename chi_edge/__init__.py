@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SUPPORTED_DEVICE_TYPES = (
-    "raspberrypi",
-    "nano",
-)
+# These should correspond to machine names and descriptions on Balena's docs:
+# https://www.balena.io/docs/reference/base-images/devicetypes/
+SUPPORTED_MACHINE_NAMES = {
+    "raspberrypi3-64": "Raspberry Pi 3 (using 64bit OS)",
+    "raspberrypi4-64": "Raspberry Pi 4 (using 64bit OS)",
+}
