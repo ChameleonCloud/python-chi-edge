@@ -18,19 +18,18 @@ name = "python-chi-edge"
 packages = [
     { include = "chi_edge" }
 ]
-version = "0.0.3"
+version = "0.1.0"
 description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
 authors = [
     "Chameleon Project <contact@chameleoncloud.org>"
 ]
-include = ["chi_edge/ansible/**"]
+
+[tool.poetry.scripts]
+chi-edge = "chi_edge.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
-ansible = "^4.0.0"
-ansible-runner = "^2.0.0"
 click = "^8.0.1"
-docker = "^5.0.3"
 PyYAML = "^6.0"
 python-chi = "^0.15.4"
 keystoneauth1 = "^4.4.0"
