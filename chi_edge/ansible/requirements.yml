@@ -1,8 +1,0 @@
----
-collections:
-  - name: community.general
-
-roles:
-  - name: geerlingguy.docker
-  - name: geerlingguy.docker_arm
-  - name: mhutter.docker-systemd-service

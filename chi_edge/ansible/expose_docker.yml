@@ -1,5 +1,0 @@
----
-- name: setup dependencies
-  hosts: all
-  roles:
-    - docker

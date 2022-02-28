@@ -1,9 +1,0 @@
-#!/bin/sh
-/usr/local/sbin/wg_up.sh wg0 mgmt
-# VxLAN encapsulation could be running over this
-# link, which will require additional packet overhead.
-# WireGuard transparently handles chunking the packets
-# and this is easier than fiddling with intermediate
-# MTUs everywhere.
-/usr/local/sbin/wg_up.sh wg1 user 1600
-exit 0

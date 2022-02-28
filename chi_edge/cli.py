@@ -11,25 +11,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
+import os
 
 import chi
 import click
-import json
-import os
 import yaml
+from keystoneauth1 import adapter
 
-from chi_edge import SUPPORTED_DEVICE_TYPES, VIRTUAL_SITE_INTERNAL_ADDRESS, ansible
-
+from chi_edge import SUPPORTED_DEVICE_TYPES
 from chi_edge.vendor.FATtools import cp
 
-from keystoneauth1 import adapter
 
 @click.group("edge")
 def cli():
     pass
 
 
-@cli.command(help="Bootstrap an edge device for enrollment into CHI@Edge")
+@cli.command(help="Register an edge device for enrollment into CHI@Edge")
 @click.argument("host")
 @click.option(
     "--device-type",
@@ -58,112 +57,10 @@ def cli():
         "posession for certain types of enrollment."
     ),
 )
-@click.option(
-    "--network-interface",
-    metavar="DEVICE",
-    default="eth0",
-    help=(
-        "The name of the interface on the device that has connectivity. If "
-        "there are multiple such interfaces, pick one to consider as the primary."
-    ),
-)
-@click.option(
-    "--mgmt-channel-address",
-    metavar="IPV4",
-    help=(
-        "The address assigned to the device on the management channel. If "
-        "you do not know what this is, ask the edge site operators."
-    ),
-)
-@click.option(
-    "--user-channel-address",
-    metavar="IPV4",
-    help=(
-        "The address assigned to the device on the user channel. If "
-        "you do not know what this is, ask the edge site operators."
-    ),
-)
-@click.option(
-    "--sudo-password",
-    metavar="PASSWORD",
-    help=("The sudo password, if required"),
-)
-@click.option(
-    "--sudo/--no-sudo",
-    default=True,
-    help=(
-        "If an unprivileged user is currently set up on the device and will "
-        "be used for bootstrapping (recommended), use sudo for escalation."
-    ),
-)
-@click.option(
-    "--extra-vars",
-    metavar="KEY=VAL",
-    multiple=True,
-    help=(
-        "Extra variables to add to the Ansible invocation(s), e.g., 'ansible_connection'. "
-        "Should be specified as key/value pairs separated by an equal sign. Repeat "
-        "to pass multiple host vars."
-    ),
-)
-def bootstrap(
-    host: "str" = None,
+def register(
     device_type: "str" = None,
-    enrollment_type: "str" = None,
-    enrollment_conf=None,
-    network_interface: "str" = None,
-    mgmt_channel_address: "str" = None,
-    user_channel_address: "str" = None,
-    sudo_password: "str" = None,
-    sudo: "bool" = None,
-    extra_vars: "dict" = None,
 ):
-    if extra_vars:
-        extra_vars_dict = dict([tuple(line.split("=") for line in extra_vars)])
-    else:
-        extra_vars_dict = {}
-
-    host_vars = {
-        "site_internal_vip": VIRTUAL_SITE_INTERNAL_ADDRESS,
-        "enrollment_type": enrollment_type,
-        **extra_vars_dict,
-    }
-
-    # Prefer to use enrollment config file to set most additional vars
-    if enrollment_conf:
-        for key, value in yaml.safe_load(enrollment_conf).items():
-            host_vars.setdefault(key, value)
-
-    # Some special (legacy) vars are set via CLI if provided
-    cli_vars = {
-        "iface": network_interface,
-        "mgmt_ipv4": mgmt_channel_address,
-        "user_ipv4": user_channel_address,
-    }
-    for key, value in cli_vars.items():
-        if value is not None:
-            host_vars[key] = value
-
-    if sudo:
-        host_vars.setdefault("ansible_become", True)
-        if sudo_password:
-            host_vars.setdefault("ansible_sudo_pass", sudo_password)
-
-    if device_type == "nano":
-        # Jetson Nanos use L4T distribution based on Ubuntu 18.04, which
-        # doesn't have docker-ce built for stable.
-        host_vars.setdefault("docker_package", "docker")
-
-    dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "ansible/defaults.yml")
-    with open(filename, "r") as f:
-        defaults = yaml.safe_load(f)
-        for key, value in defaults.items():
-            host_vars.setdefault(key, value)
-
-    return ansible.run(
-        "setup_edge_dev.yml", host, group=device_type, host_vars=host_vars
-    )
+    pass
 
 
 @cli.command(help="Bake a balena image")
@@ -190,8 +87,7 @@ def bake(
     doni = doni_client()
     hardware = doni.get(f"/v1/hardware/{device_uuid}/").json()
     balena_workers = [
-        worker for worker in hardware["workers"]
-        if worker["worker_type"] == "balena"
+        worker for worker in hardware["workers"] if worker["worker_type"] == "balena"
     ]
     if not balena_workers:
         print(f"Expected to find 1 balena worker, found {len(balena_workers)}")
@@ -230,5 +126,4 @@ def bake(
 
 
 def doni_client():
-    return adapter.Adapter(
-        chi.session(), interface="public", service_type="inventory")
+    return adapter.Adapter(chi.session(), interface="public", service_type="inventory")
