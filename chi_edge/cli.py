@@ -242,6 +242,16 @@ def delete(device: "str", yes_i_really_really_mean_it: "bool" = False):
         print("Successfully deleted device")
 
 
+@device.command(cls=BaseCommand, short_help="force device re-sync")
+@click.argument("device")
+def sync(device: "str"):
+    with doni_error_handler("failed to sync device"):
+        doni = doni_client()
+        uuid = resolve_device(doni, device)
+        doni.post(f"/v1/hardware/{uuid}/sync/")
+        print("Successfully started device re-sync")
+
+
 @device.command(
     cls=BaseCommand, short_help="configure an OS image for a registered device"
 )
