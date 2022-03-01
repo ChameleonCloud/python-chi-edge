@@ -194,6 +194,37 @@ def show(device: "str"):
         print_device(doni.get(f"/v1/hardware/{uuid}/").json())
 
 
+@device.command(cls=BaseCommand, short_help="update device details")
+@click.argument("device")
+@click.option("--contact-email")
+@click.option("--application-credential-id")
+@click.option("--application-credential-secret")
+def set(
+    device: "str",
+    contact_email: "str" = None,
+    application_credential_id: "str" = None,
+    application_credential_secret: "str" = None,
+):
+    def patch_to(prop, value):
+        return {"op": "replace", "path": f"/properties/{prop}", "value": value}
+
+    with doni_error_handler("failed to fetch device"):
+        doni = doni_client()
+        uuid = resolve_device(doni, device)
+        patch = []
+        if contact_email:
+            patch.append(patch_to("contact_email", contact_email))
+        if application_credential_id:
+            patch.append(
+                patch_to("application_credential_id", application_credential_id)
+            )
+        if application_credential_secret:
+            patch.append(
+                patch_to("application_credential_secret", application_credential_secret)
+            )
+        print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
+
+
 @device.command(cls=BaseCommand, short_help="delete registered device")
 @click.argument("device")
 def delete(device: "str"):
