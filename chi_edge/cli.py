@@ -194,7 +194,7 @@ def show(device: "str"):
         print_device(doni.get(f"/v1/hardware/{uuid}/").json())
 
 
-@device.command(cls=BaseCommand, short_help="update device details")
+@device.command(cls=BaseCommand, short_help="update registered device details")
 @click.argument("device")
 @click.option("--contact-email")
 @click.option("--application-credential-id")
