@@ -227,7 +227,14 @@ def set(
 
 @device.command(cls=BaseCommand, short_help="delete registered device")
 @click.argument("device")
-def delete(device: "str"):
+@click.option("--yes-i-really-really-mean-it", is_flag=True)
+def delete(device: "str", yes_i_really_really_mean_it: "bool" = False):
+    if not yes_i_really_really_mean_it:
+        raise click.ClickException(
+            "Are you sure? Specify --yes-i-really-really-mean-it if so. Deleting the "
+            "device will clean up all record of its registration and will impact any "
+            "current users of the device on the testbed."
+        )
     with doni_error_handler("failed to delete device"):
         doni = doni_client()
         uuid = resolve_device(doni, device)
