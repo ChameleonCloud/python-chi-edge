@@ -292,14 +292,15 @@ def bake(device: "str", image: "str" = None):
     if config_file.exists():
         raise click.ClickException("'config.json' already exists!")
 
+    device_hw = None
     with doni_error_handler("failed to bake device"):
         # Check for device in doni
         doni = doni_client()
         device_uuid = resolve_device(doni, device)
-        hardware = doni.get(f"/v1/hardware/{device_uuid}/").json()
+        device_hw = doni.get(f"/v1/hardware/{device_uuid}/").json()
         balena_workers = [
             worker
-            for worker in hardware["workers"]
+            for worker in device_hw["workers"]
             if worker["worker_type"] == "balena"
         ]
 
@@ -344,7 +345,7 @@ def bake(device: "str", image: "str" = None):
     config["deviceApiKeys"] = {"api.balena-cloud.com": balena_device_api_key}
     config["registered_at"] = config["registeredAt"] = str(
         # Store in microseconds
-        int(parse_date(device["created_at"]).timestamp() * 1000)
+        int(parse_date(device_hw["created_at"]).timestamp() * 1000)
     )
     # Sometimes the pre-baked config.json image has this set in its file
     if "apiKey" in config:
