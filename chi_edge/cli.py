@@ -325,16 +325,31 @@ def bake(device: "str", image: "str" = None):
     if image:
         # Note: due to a quirk in the FATTools, `cp` causes the name of the file
         # to be printed to stdout here.
-        cp.cp([f"{image}/config.json"], str(config_file.absolute()))
-        with config_file.open("r") as f:
-            config = json.load(f)
+        try:
+            cp.cp([f"{image}/config.json"], str(config_file.absolute()))
+            with config_file.open("r") as f:
+                config = json.load(f)
+        except:
+            # This can fail for a number of reasons, mainly if the file for w/e reason
+            # is not inside the image (or if that fils is malformed JSON?)
+            config = {}
     else:
         config = {}
 
     # Copy over needed keys to config
     config["uuid"] = device_uuid.replace("-", "").lower()
-    config["apiKey"] = balena_device_api_key
     config["applicationId"] = balena_fleet_id
+    config["userId"] = None
+    config["deviceApiKey"] = balena_device_api_key
+    config["deviceApiKeys"] = {"api.balena-cloud.com": balena_device_api_key}
+    config["registered_at"] = config["registeredAt"] = str(
+        # Store in microseconds
+        int(parse_date(device["created_at"]).timestamp() * 1000)
+    )
+    # Sometimes the pre-baked config.json image has this set in its file
+    if "apiKey" in config:
+        del config["apiKey"]
+
     config["appUpdatePollInterval"] = "60000"
     # This is the default Balena supervisor listen port
     config["listenPort"] = "48484"
@@ -413,16 +428,16 @@ def resolve_device(doni_client, device_ref: "str"):
     return uuid
 
 
+def parse_date(utc_datestr):
+    return datetime.fromisoformat(utc_datestr.replace("Z", "+00:00"))
+
+
 def localize(utc_datestr):
     if not utc_datestr:
         return utc_datestr
     try:
-        return (
-            datetime.fromisoformat(utc_datestr.replace("Z", "+00:00"))
-            .astimezone()
-            .isoformat()
-        )
-    except ValueError as exc:
+        return parse_date(utc_datestr).astimezone().isoformat()
+    except ValueError:
         return utc_datestr
 
 
