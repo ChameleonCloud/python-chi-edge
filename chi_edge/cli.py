@@ -15,8 +15,8 @@ import contextlib
 from datetime import datetime
 import json
 import logging
-from operator import itemgetter
 import os
+from pathlib import Path
 from uuid import UUID
 
 import chi
@@ -276,7 +276,7 @@ def sync(device: "str"):
 @device.command(
     cls=BaseCommand, short_help="configure an OS image for a registered device"
 )
-@click.argument("device_uuid")
+@click.argument("device")
 @click.option(
     "--image",
     metavar="IMAGE",
@@ -286,40 +286,55 @@ def sync(device: "str"):
         "copied anywhere."
     ),
 )
-def bake(
-    device_uuid: "str",
-    image: "str" = None,
-):
+def bake(device: "str", image: "str" = None):
+    config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
-    if os.path.isfile("config.json"):
+    if config_file.exists():
         raise click.ClickException("'config.json' already exists!")
 
-    # Check for device in doni
-    doni = doni_client()
-    hardware = doni.get(f"/v1/hardware/{device_uuid}/").json()
-    balena_workers = [
-        worker for worker in hardware["workers"] if worker["worker_type"] == "balena"
-    ]
+    with doni_error_handler("failed to bake device"):
+        # Check for device in doni
+        doni = doni_client()
+        device_uuid = resolve_device(doni, device)
+        hardware = doni.get(f"/v1/hardware/{device_uuid}/").json()
+        balena_workers = [
+            worker
+            for worker in hardware["workers"]
+            if worker["worker_type"] == "balena"
+        ]
+
     if not balena_workers:
         raise click.ClickException(
             "Device is not enrolled with support for Balena, you may need to attempt "
             "registration again"
         )
+
     balena_worker = balena_workers[0]["state_details"]
+    balena_device_api_key = balena_worker.get("device_api_key")
+    balena_fleet_id = balena_worker.get("fleet_id")
+
+    if not (balena_device_api_key and balena_fleet_id):
+        raise click.ClickException(
+            "Device has not finished enrollment in Balena yet. Please wait a minute "
+            "and try again, or check the state of the registration to see if it is in "
+            "error."
+        )
 
     # Copy existing config file. For an unconfigured OS, it seems this
     # just contains `deviceType`
     if image:
-        cp.cp([f"{image}/config.json"], "config.json")
-        with open("config.json") as f:
+        # Note: due to a quirk in the FATTools, `cp` causes the name of the file
+        # to be printed to stdout here.
+        cp.cp([f"{image}/config.json"], str(config_file.absolute()))
+        with config_file.open("r") as f:
             config = json.load(f)
     else:
         config = {}
 
     # Copy over needed keys to config
     config["uuid"] = device_uuid.replace("-", "").lower()
-    config["apiKey"] = balena_worker["device_api_key"]
-    config["applicationId"] = balena_worker["fleet_id"]
+    config["apiKey"] = balena_device_api_key
+    config["applicationId"] = balena_fleet_id
     config["appUpdatePollInterval"] = "60000"
     # This is the default Balena supervisor listen port
     config["listenPort"] = "48484"
@@ -330,11 +345,15 @@ def bake(
     config["deltaEndpoint"] = "https://delta.balena-cloud.com"
 
     # Put config data back into image
-    with open("config.json", "w") as f:
+    with config_file.open("w") as f:
         json.dump(config, f)
+
     if image:
-        cp.cp(["config.json"], f"{image}/config.json")
+        # Note: due to a quirk in the FATTools, `cp` causes the name of the file
+        # to be printed to stdout here.
+        cp.cp([str(config_file.absolute())], f"{image}/config.json")
         print("Successfully patched image")
+        config_file.unlink()
     else:
         print("Created 'config.json'")
 
@@ -395,6 +414,8 @@ def resolve_device(doni_client, device_ref: "str"):
 
 
 def localize(utc_datestr):
+    if not utc_datestr:
+        return utc_datestr
     try:
         return (
             datetime.fromisoformat(utc_datestr.replace("Z", "+00:00"))
