@@ -153,8 +153,8 @@ def register(
         print_device(device)
 
 
-@device.command(cls=BaseCommand, short_help="list registered devices")
-def list():
+@device.command("list", cls=BaseCommand, short_help="list registered devices")
+def list_all():
     with doni_error_handler("failed to list devices"):
         devices = doni_client().get("/v1/hardware/").json()["hardware"]
         table = make_table()
@@ -199,14 +199,27 @@ def show(device: "str"):
 @click.option("--contact-email")
 @click.option("--application-credential-id")
 @click.option("--application-credential-secret")
+@click.option(
+    "--authorized-projects",
+    help=(
+        "A list of Chameleon projects (names or IDs) that will be allowed to reserve "
+        "and use the device. Specify as a comma-separated list."
+    ),
+)
+@click.option(
+    "--authorized-projects-reason",
+    help="An optional display reason to explain why the device has restrictions.",
+)
 def set(
     device: "str",
     contact_email: "str" = None,
     application_credential_id: "str" = None,
     application_credential_secret: "str" = None,
+    authorized_projects: "str" = None,
+    authorized_projects_reason: "str" = None,
 ):
     def patch_to(prop, value):
-        return {"op": "replace", "path": f"/properties/{prop}", "value": value}
+        return {"op": "add", "path": f"/properties/{prop}", "value": value}
 
     with doni_error_handler("failed to fetch device"):
         doni = doni_client()
@@ -221,6 +234,14 @@ def set(
         if application_credential_secret:
             patch.append(
                 patch_to("application_credential_secret", application_credential_secret)
+            )
+        if authorized_projects:
+            patch.append(
+                patch_to("authorized_projects", authorized_projects.split(","))
+            )
+        if authorized_projects_reason:
+            patch.append(
+                patch_to("authorized_projects_reason", authorized_projects_reason)
             )
         print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
 
@@ -385,7 +406,7 @@ def localize(utc_datestr):
 
 
 def format_value(value):
-    if isinstance(value, dict):
+    if isinstance(value, dict) or isinstance(value, list):
         return yaml.dump(value).strip()
     return value
 
