@@ -179,7 +179,7 @@ def list_all():
                 device["uuid"],
                 localize(device["created_at"]),
                 registration_state,
-                localize(balena_worker["state_details"].get("last_seen", "--"))
+                localize(balena_worker["state_details"].get("last_seen") or "--")
                 if balena_worker
                 else "--",
             )
