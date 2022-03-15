@@ -12,23 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import contextlib
-from datetime import datetime
 import json
 import logging
-from operator import itemgetter
 import os
+from datetime import datetime
+from operator import itemgetter
 from uuid import UUID
 
 import chi
 import click
+import yaml
 from keystoneauth1 import adapter
 from keystoneauth1 import exceptions as ksa_exc
-from rich.console import Console
 from rich import box
+from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-import yaml
 
 from chi_edge import SUPPORTED_MACHINE_NAMES
 from chi_edge.vendor.FATtools import cp
@@ -119,8 +119,9 @@ def register(
     Currently a limited number of machine names (types/classes of devices) are supported:
 
     \b
-      raspberrypi3-64: Raspberry Pi 3 (using 64bit OS)
-      raspberrypi4-64: Raspberry Pi 4 (using 64bit OS)
+      raspberrypi3-64: Raspberry Pi 3
+      raspberrypi4-64: Raspberry Pi 4
+      jetson-nano: Jetson Nano Devkit (SD Card, Rev B01)
 
     \b
     Naming your device

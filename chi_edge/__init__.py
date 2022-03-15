@@ -15,6 +15,7 @@
 # These should correspond to machine names and descriptions on Balena's docs:
 # https://www.balena.io/docs/reference/base-images/devicetypes/
 SUPPORTED_MACHINE_NAMES = {
-    "raspberrypi3-64": "Raspberry Pi 3 (using 64bit OS)",
-    "raspberrypi4-64": "Raspberry Pi 4 (using 64bit OS)",
+    "raspberrypi3-64": "Raspberry Pi 3",
+    "raspberrypi4-64": "Raspberry Pi 4",
+    "jetson-nano": "Jetson Nano Devkit (SD Card, Rev B01)",
 }
