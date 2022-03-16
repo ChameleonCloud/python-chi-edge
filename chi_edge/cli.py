@@ -339,6 +339,7 @@ def bake(device: "str", image: "str" = None):
 
     # Copy over needed keys to config
     config["uuid"] = device_uuid.replace("-", "").lower()
+    config["hostname"] = device_hw["name"]
     config["applicationId"] = balena_fleet_id
     config["userId"] = None
     config["deviceApiKey"] = balena_device_api_key
