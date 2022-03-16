@@ -12,26 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import contextlib
-from datetime import datetime
 import json
 import logging
 import os
+from datetime import datetime
+from glob import escape
 from pathlib import Path
 from uuid import UUID
 
 import chi
 import click
+import yaml
 from keystoneauth1 import adapter
 from keystoneauth1 import exceptions as ksa_exc
-from rich.console import Console
 from rich import box
+from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-import yaml
 
 from chi_edge import SUPPORTED_MACHINE_NAMES
-from chi_edge.vendor.FATtools import cp
+from chi_edge.image import find_boot_partition_id, read_config_file, write_config_file
 
 console = Console()
 
@@ -288,6 +289,7 @@ def sync(device: "str"):
     ),
 )
 def bake(device: "str", image: "str" = None):
+
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
     if config_file.exists():
@@ -322,18 +324,24 @@ def bake(device: "str", image: "str" = None):
             "error."
         )
 
+    boot_part_id = 0
+    # If image is present, find the boot partition
+    if image:
+        boot_part_id = find_boot_partition_id(image)
+
     # Copy existing config file. For an unconfigured OS, it seems this
     # just contains `deviceType`
     if image:
-        # Note: due to a quirk in the FATTools, `cp` causes the name of the file
-        # to be printed to stdout here.
         try:
-            cp.cp([f"{image}/config.json"], str(config_file.absolute()))
+            read_config_file(
+                image, boot_part_id, "config.json", str(config_file.absolute())
+            )
             with config_file.open("r") as f:
                 config = json.load(f)
-        except:
+        except Exception as e:
             # This can fail for a number of reasons, mainly if the file for w/e reason
             # is not inside the image (or if that fils is malformed JSON?)
+            console.print_exception()
             config = {}
     else:
         config = {}
@@ -366,9 +374,9 @@ def bake(device: "str", image: "str" = None):
         json.dump(config, f)
 
     if image:
-        # Note: due to a quirk in the FATTools, `cp` causes the name of the file
-        # to be printed to stdout here.
-        cp.cp([str(config_file.absolute())], f"{image}/config.json")
+        write_config_file(
+            image, boot_part_id, str(config_file.absolute()), dest_file="config.json"
+        )
         print("Successfully patched image")
         config_file.unlink()
     else:
