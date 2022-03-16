@@ -17,4 +17,5 @@
 SUPPORTED_MACHINE_NAMES = {
     "raspberrypi3-64": "Raspberry Pi 3 (using 64bit OS)",
     "raspberrypi4-64": "Raspberry Pi 4 (using 64bit OS)",
+    "jetson-nano": "Jetson Nano Devkit (SD Card, rev B01)",
 }
