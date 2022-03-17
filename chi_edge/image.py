@@ -4,11 +4,6 @@ from pathlib import Path
 from chi_edge.vendor.FATtools import Volume
 from chi_edge.vendor.FATtools.partutils import partition
 
-
-def printn(s):
-    print(s)
-
-
 def find_boot_partition_id(image: str):
 
     # max of 128 gpt partitions possible
@@ -47,7 +42,6 @@ def read_config_file(image, partition_id, src_file, dest_file):
         base=fs_ref,
         src_list=[src_file],
         dest=dest_file,
-        callback=printn,
     )
 
     Volume.vclose(part_ref)
@@ -62,7 +56,6 @@ def write_config_file(image, partition_id, src_file, dest_file):
     Volume.copy_in(
         [src_file],
         dest=dest_ref,
-        callback=printn,
     )
     fs_ref.flush()
     fs_ref.fat.stream.close()
