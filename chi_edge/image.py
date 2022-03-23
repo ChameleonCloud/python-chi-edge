@@ -4,6 +4,7 @@ from pathlib import Path
 from chi_edge.vendor.FATtools import Volume
 from chi_edge.vendor.FATtools.partutils import partition
 
+
 def find_boot_partition_id(image: str):
 
     # max of 128 gpt partitions possible
