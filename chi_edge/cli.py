@@ -451,8 +451,8 @@ def resolve_device(doni_client, device_ref: "str"):
 
 
 def parse_date(utc_datestr):
-    # return datetime.fromisoformat(utc_datestr.replace("Z", "+00:00"))
-    return datetime.strptime(utc_datestr, "%Y-%m-%dT%H:%M:%S.%f%z")
+    parsed_date = datetime.strptime(utc_datestr, "%Y-%m-%dT%H:%M:%S+00:00")
+    return parsed_date
 
 
 def localize(utc_datestr):
