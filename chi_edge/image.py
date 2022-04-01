@@ -1,4 +1,5 @@
 """Utilities for reading and writing to disk image."""
+import json
 from pathlib import Path
 
 from chi_edge.vendor.FATtools import Volume
@@ -34,31 +35,37 @@ def find_boot_partition_id(image: str):
         raise Exception("Cannot find boot partition")
 
 
-def read_config_file(image, partition_id, src_file, dest_file):
+def read_config_json(image, partition_id, filename):
+    o = Volume.vopen(image, mode="r+b", what=f"partition{partition_id}")
+    fs = Volume.openvolume(o)
+    f = fs.open(filename)
+    try:
+        data = json.load(f)
+    except json.JSONDecodeError:
+        raise
+    finally:
+        f.close()
+        fs.close()
+        o.close()
 
-    part_ref = Volume.vopen(image, mode="r+b", what=f"partition{partition_id}")
-    fs_ref = Volume.openvolume(part_ref)
-
-    Volume.copy_out(
-        base=fs_ref,
-        src_list=[src_file],
-        dest=dest_file,
-    )
-
-    Volume.vclose(part_ref)
+    return data
 
 
-def write_config_file(image, partition_id, src_file, dest_file):
-
-    part_ref = Volume.vopen(image, mode="r+b", what=f"partition{partition_id}")
-    fs_ref = Volume.openvolume(part_ref)
-    dest_ref = fs_ref.open(dest_file)
-
-    Volume.copy_in(
-        [src_file],
-        dest=dest_ref,
-    )
-    fs_ref.flush()
-    fs_ref.fat.stream.close()
-
-    Volume.vclose(part_ref)
+def write_config_json(image, partition_id, filename, configdata):
+    o = Volume.vopen(image, mode="r+b", what=f"partition{partition_id}")
+    fs = Volume.openvolume(o)
+    try:
+        # we need to write bytes, use fattools write method
+        json_str = json.dumps(
+            obj=configdata,
+            indent=2,
+        )
+        f = fs.create(filename)
+        f.write(json_str.encode("utf-8"))
+        fs.flush()
+    except json.JSONDecodeError:
+        raise
+    finally:
+        f.close()
+        fs.close()
+        o.close()

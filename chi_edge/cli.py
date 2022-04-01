@@ -32,7 +32,7 @@ from rich.table import Table
 from rich.text import Text
 
 from chi_edge import SUPPORTED_MACHINE_NAMES
-from chi_edge.image import find_boot_partition_id, read_config_file, write_config_file
+from chi_edge.image import find_boot_partition_id, read_config_json, write_config_json
 
 console = Console()
 
@@ -333,11 +333,7 @@ def bake(device: "str", image: "str" = None):
     # just contains `deviceType`
     if image:
         try:
-            read_config_file(
-                image, boot_part_id, "config.json", str(config_file.absolute())
-            )
-            with config_file.open("r") as f:
-                config = json.load(f)
+            config = read_config_json(image, boot_part_id, "config.json")
         except Exception as e:
             # This can fail for a number of reasons, mainly if the file for w/e reason
             # is not inside the image (or if that fils is malformed JSON?)
@@ -372,16 +368,31 @@ def bake(device: "str", image: "str" = None):
 
     # Put config data back into image
     with config_file.open("w") as f:
-        json.dump(config, f)
+        json.dump(config, f, indent=2)
 
     if image:
-        write_config_file(
-            image, boot_part_id, str(config_file.absolute()), dest_file="config.json"
-        )
-        print("Successfully patched image")
+
+        write_config_json(image, boot_part_id, "config.json", config)
+
+        try:
+            written_config = read_config_json(image, boot_part_id, "config.json")
+        except Exception as ex:
+            print(ex)
+            raise (ex)
+        else:
+            if config == written_config:
+                print("Successfully patched image, verified config file")
+            else:
+                print("Written config does not match")
+                exit(1)
         config_file.unlink()
     else:
         print("Created 'config.json'")
+
+
+def _verify_config_file(config_data, file_path):
+    with open(file_path) as f:
+        written_data = json.load(f)
 
 
 def doni_client():
