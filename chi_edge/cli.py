@@ -31,7 +31,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from chi_edge import SUPPORTED_MACHINE_NAMES
+from chi_edge import LOCAL_EGRESS, SUPPORTED_MACHINE_NAMES
 from chi_edge.image import find_boot_partition_id, read_config_json, write_config_json
 
 console = Console()
@@ -212,6 +212,12 @@ def show(device: "str"):
     "--authorized-projects-reason",
     help="An optional display reason to explain why the device has restrictions.",
 )
+@click.option(
+    "--local-egress",
+    required=False,
+    help="Can the device contact IPs on its local network",
+    type=click.Choice(LOCAL_EGRESS),
+)
 def set(
     device: "str",
     contact_email: "str" = None,
@@ -219,6 +225,7 @@ def set(
     application_credential_secret: "str" = None,
     authorized_projects: "str" = None,
     authorized_projects_reason: "str" = None,
+    local_egress: "str" = None,
 ):
     def patch_to(prop, value):
         return {"op": "add", "path": f"/properties/{prop}", "value": value}
@@ -245,6 +252,8 @@ def set(
             patch.append(
                 patch_to("authorized_projects_reason", authorized_projects_reason)
             )
+        if local_egress:
+            patch.append(patch_to("local_egress", local_egress))
         print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
 
 

@@ -20,3 +20,8 @@ SUPPORTED_MACHINE_NAMES = {
     "jetson-nano": "Jetson Nano Devkit (SD Card, rev B01)",
     "jetson-xavier-nx-emmc": "Jetson Xavier NX Devkit (eMMC)",
 }
+
+LOCAL_EGRESS = [
+    "allow",
+    "deny",
+]
