@@ -31,7 +31,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from chi_edge import LOCAL_EGRESS, SUPPORTED_MACHINE_NAMES
+from chi_edge import LOCAL_EGRESS, SUPPORTED_MACHINE_NAMES, utils
 from chi_edge.image import find_boot_partition_id, read_config_json, write_config_json
 
 console = Console()
@@ -135,6 +135,9 @@ def register(
 
     """
     with doni_error_handler("failed to register device"):
+        if not utils.validate_rfc1123_name(device_name):
+            raise click.ClickException("device name must match RFC1123 DNS")
+
         device = (
             doni_client()
             .post(
