@@ -19,6 +19,7 @@ SUPPORTED_MACHINE_NAMES = {
     "raspberrypi4-64": "Raspberry Pi 4 (using 64bit OS)",
     "jetson-nano": "Jetson Nano Devkit (SD Card, rev B01)",
     "jetson-xavier-nx-emmc": "Jetson Xavier NX Devkit (eMMC)",
+    "jetson-agx-orin-devkit": "Jetson AGX Orin Devkit",
 }
 
 LOCAL_EGRESS = [
