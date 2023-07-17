@@ -20,6 +20,7 @@ SUPPORTED_MACHINE_NAMES = {
     "jetson-nano": "Jetson Nano Devkit (SD Card, rev B01)",
     "jetson-xavier-nx-emmc": "Jetson Xavier NX Devkit (eMMC)",
     "jetson-agx-orin-devkit": "Jetson AGX Orin Devkit",
+    "coral-dev": "Google Coral Dev Board",
 }
 
 LOCAL_EGRESS = [
