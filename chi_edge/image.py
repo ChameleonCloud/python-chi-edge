@@ -16,7 +16,11 @@ def find_boot_partition_id(image: str):
                 mode="r+b",
                 what=f"partition{partid}",
             )
-            partfs = Volume.openvolume(part)
+            try:
+                partfs = Volume.openvolume(part)
+            except AttributeError:
+                """Sometimes Volume.vopen returns the string 'EINV'"""
+                continue
         except ZeroDivisionError:
             pass
         except FileNotFoundError:
@@ -27,7 +31,7 @@ def find_boot_partition_id(image: str):
             except AttributeError:
                 pass
             else:
-                if part_label == "resin-bo.ot":
+                if part_label == "resin-bo.ot" or part_label == "flash-bo.ot":
                     Volume.vclose(part)
                     return partid
             Volume.vclose(part)
