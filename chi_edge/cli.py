@@ -300,7 +300,14 @@ def sync(device: "str"):
         "copied anywhere."
     ),
 )
-def bake(device: "str", image: "str" = None):
+@click.option(
+    "--ssh-public-key",
+    metavar="SSH PUBLIC KEY",
+    help=(
+        "A public ssh key as a string to be baked into the balena image."
+    ),
+)
+def bake(device: "str", image: "str" = None, ssh_public_key: "str" = None):
 
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
@@ -377,6 +384,9 @@ def bake(device: "str", image: "str" = None):
     config["vpnEndpoint"] = "vpn.balena-cloud.com"
     config["registryEndpoint"] = "registry2.balena-cloud.com"
     config["deltaEndpoint"] = "https://delta.balena-cloud.com"
+
+    if ssh_public_key:
+        config["os"] = {"sshKeys" : [ssh_public_key]}
 
     # Put config data back into image
     with config_file.open("w") as f:
