@@ -385,6 +385,7 @@ def bake(device: "str", image: "str" = None, ssh_public_key: "str" = None):
     config["registryEndpoint"] = "registry2.balena-cloud.com"
     config["deltaEndpoint"] = "https://delta.balena-cloud.com"
 
+    # Add a public ssh key if specified
     if ssh_public_key:
         config["os"] = {"sshKeys" : [ssh_public_key]}
 
