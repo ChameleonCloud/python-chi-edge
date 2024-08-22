@@ -122,7 +122,7 @@ def register(
     \b
       raspberrypi3-64: Raspberry Pi 3 (using 64bit OS)
       raspberrypi4-64: Raspberry Pi 4 (using 64bit OS)
-      raspberrypi5-64: Raspberry Pi 4 (using 64bit OS)
+      raspberrypi5: Raspberry Pi 5 (newer)
       jetson-nano: Jetson Nano Devkit (SD Card, rev B01)
 
     \b
