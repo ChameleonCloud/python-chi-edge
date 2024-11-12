@@ -19,25 +19,15 @@ dependencies = [
     "rich~=11.2.0"
 ]
 
-[project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
-
-[project.optional-dependencies]
-
-dev = [
-    "pytest~=6.2",
-    "black",
-    "flake8",
-]
-
 [project.scripts]
 chi-edge = "chi_edge.cli:cli"
 
-[tool.black]
-# Set line length explicitly.
-# See https://black.readthedocs.io/en/stable/the_black_code_style.html#line-length for more details
+[tool.ruff]
 line-length = 88
+indent-width = 4
+
+# don't lint the files we vendored
+exclude = ["chi_edge/vendor/*"]
 
 [tool.pytest.ini_options]
 log_cli = true
