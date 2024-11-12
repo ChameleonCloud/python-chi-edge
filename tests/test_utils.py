@@ -13,5 +13,11 @@
 # limitations under the License.
 
 
-def test_load():
-    from chi_edge import ansible
+from chi_edge import utils
+
+
+def test_valid_names():
+    # names are not allowed to have underscores
+    assert not utils.validate_rfc1123_name("abc_def")
+    # but dashes are ok
+    assert utils.validate_rfc1123_name("abc-def")
