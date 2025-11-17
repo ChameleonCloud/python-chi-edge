@@ -574,14 +574,14 @@ wheels = [
 
 [[package]]
 name = "fattools"
-version = "1.1.7"
+version = "1.0.41"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "hexdump" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/cd/913c2dae7736b0e9db7dbecaf2fcca63ef05cc1a46ff6abdab9c6e97e593/fattools-1.1.7.tar.gz", hash = "sha256:f7f8ce6b75285bf09bb3e4f55030da5c9d53ff9c2c695291d067a8a6882765a9", size = 129124, upload-time = "2025-10-20T15:25:56.152Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/bb/4d799e6763f6ff121038d66295823b57094b6c72ee643a0f8adfae2fcefa/fattools-1.0.41.tar.gz", hash = "sha256:87f6bcd3af308589c83fe829c3a6773f535a1a99442ceb0c45988ff17bfcae64", size = 116694, upload-time = "2025-01-26T07:46:32.104Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/90/f67c4e9d7c8f48cc0086cb691bd837d43ded44241603e7165a4ed837da94/fattools-1.1.7-py3-none-any.whl", hash = "sha256:fa879fc92375242cdbfc23fda6bde8acc1bf024ee02d275ae0cee33d226ee374", size = 148495, upload-time = "2025-10-20T15:25:54.457Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/e5/220652ce07fc551c72167a9bafb8eaa71cee4479da0346433803b2bfebc4/FATtools-1.0.41-py3-none-any.whl", hash = "sha256:f255c53938f824e0fe3a8e87af509665adf35809a5a7ed6b9b7eb608fe2217c1", size = 132304, upload-time = "2025-01-26T07:46:29.873Z" },
 ]
 
 [[package]]
@@ -1447,7 +1447,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.0.1,<9" },
-    { name = "fattools", specifier = ">=1.1.7" },
+    { name = "fattools", specifier = "==1.0.41" },
     { name = "keystoneauth1", specifier = ">=4.4.0,<5" },
     { name = "python-chi", specifier = ">=0.15.4,<0.16" },
     { name = "pyyaml", specifier = "~=6.0" },
