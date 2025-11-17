@@ -35,8 +35,10 @@ from chi_edge.image import find_boot_partition_id, read_config_json, write_confi
 
 console = Console()
 
+
 def doni_client(session: ksa_session.Session):
     return ksa_adapter.Adapter(session, interface="public", service_type="inventory")
+
 
 class BaseCommand(click.Command):
     """A base command class that handles global option parsing."""
@@ -64,13 +66,13 @@ def cli(ctx):
     capabilities provided by the SDK.
     """
     ctx.ensure_object(dict)
-    ctx.obj['conn'] = openstack.connect()
+    ctx.obj["conn"] = openstack.connect()
 
 
 @cli.group("device", short_help="manage or register devices")
 @click.pass_context
 def device(ctx):
-    ctx.obj['doni_client'] = doni_client(ctx.obj['conn'].session)
+    ctx.obj["doni_client"] = doni_client(ctx.obj["conn"].session)
 
 
 @device.command(cls=BaseCommand, short_help="register a new device")
@@ -146,7 +148,8 @@ def register(
             raise click.ClickException("device name must match RFC1123 DNS")
 
         device = (
-            ctx.obj['doni_client'].post(
+            ctx.obj["doni_client"]
+            .post(
                 "/v1/hardware/",
                 json={
                     "name": device_name,
@@ -168,7 +171,7 @@ def register(
 @click.pass_context
 def list_all(ctx):
     with doni_error_handler("failed to list devices"):
-        devices = ctx.obj['doni_client'].get("/v1/hardware/").json()["hardware"]
+        devices = ctx.obj["doni_client"].get("/v1/hardware/").json()["hardware"]
         table = make_table()
         table.add_column("Name")
         table.add_column("UUID")
@@ -202,8 +205,8 @@ def list_all(ctx):
 @click.pass_context
 def show(ctx, device: "str"):
     with doni_error_handler("failed to fetch device"):
-        uuid = resolve_device(ctx.obj['doni_client'], device)
-        print_device(ctx.obj['doni_client'].get(f"/v1/hardware/{uuid}/").json())
+        uuid = resolve_device(ctx.obj["doni_client"], device)
+        print_device(ctx.obj["doni_client"].get(f"/v1/hardware/{uuid}/").json())
 
 
 @device.command(cls=BaseCommand, short_help="update registered device details")
@@ -243,7 +246,7 @@ def set(
         return {"op": "add", "path": f"/properties/{prop}", "value": value}
 
     with doni_error_handler("failed to fetch device"):
-        uuid = resolve_device(ctx.obj['doni_client'], device)
+        uuid = resolve_device(ctx.obj["doni_client"], device)
         patch = []
         if contact_email:
             patch.append(patch_to("contact_email", contact_email))
@@ -265,7 +268,9 @@ def set(
             )
         if local_egress:
             patch.append(patch_to("local_egress", local_egress))
-        print_device(ctx.obj['doni_client'].patch(f"/v1/hardware/{uuid}/", json=patch).json())
+        print_device(
+            ctx.obj["doni_client"].patch(f"/v1/hardware/{uuid}/", json=patch).json()
+        )
 
 
 @device.command(cls=BaseCommand, short_help="delete registered device")
@@ -280,8 +285,8 @@ def delete(ctx, device: "str", yes_i_really_really_mean_it: "bool" = False):
             "current users of the device on the testbed."
         )
     with doni_error_handler("failed to delete device"):
-        uuid = resolve_device(ctx.obj['doni_client'], device)
-        ctx.obj['doni_client'].delete(f"/v1/hardware/{uuid}/")
+        uuid = resolve_device(ctx.obj["doni_client"], device)
+        ctx.obj["doni_client"].delete(f"/v1/hardware/{uuid}/")
         print("Successfully deleted device")
 
 
@@ -290,8 +295,8 @@ def delete(ctx, device: "str", yes_i_really_really_mean_it: "bool" = False):
 @click.pass_context
 def sync(ctx, device: "str"):
     with doni_error_handler("failed to sync device"):
-        uuid = resolve_device(ctx.obj['doni_client'], device)
-        ctx.obj['doni_client'].post(f"/v1/hardware/{uuid}/sync/")
+        uuid = resolve_device(ctx.obj["doni_client"], device)
+        ctx.obj["doni_client"].post(f"/v1/hardware/{uuid}/sync/")
         print("Successfully started device re-sync")
 
 
@@ -310,7 +315,6 @@ def sync(ctx, device: "str"):
 )
 @click.pass_context
 def bake(ctx, device: "str", image: "str" = None):
-
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
     if config_file.exists():
@@ -319,8 +323,8 @@ def bake(ctx, device: "str", image: "str" = None):
     device_hw = None
     with doni_error_handler("failed to bake device"):
         # Check for device in doni
-        device_uuid = resolve_device(ctx.obj['doni_client'], device)
-        device_hw = ctx.obj['doni_client'].get(f"/v1/hardware/{device_uuid}/").json()
+        device_uuid = resolve_device(ctx.obj["doni_client"], device)
+        device_hw = ctx.obj["doni_client"].get(f"/v1/hardware/{device_uuid}/").json()
         balena_workers = [
             worker
             for worker in device_hw["workers"]
@@ -354,7 +358,7 @@ def bake(ctx, device: "str", image: "str" = None):
     if image:
         try:
             config = read_config_json(image, boot_part_id, "config.json")
-        except Exception as e:
+        except Exception:
             # This can fail for a number of reasons, mainly if the file for w/e reason
             # is not inside the image (or if that fils is malformed JSON?)
             console.print_exception()
@@ -391,7 +395,6 @@ def bake(ctx, device: "str", image: "str" = None):
         json.dump(config, f, indent=2)
 
     if image:
-
         write_config_json(image, boot_part_id, "config.json", config)
 
         try:
@@ -408,14 +411,6 @@ def bake(ctx, device: "str", image: "str" = None):
         config_file.unlink()
     else:
         print("Created 'config.json'")
-
-
-def _verify_config_file(config_data, file_path):
-    with open(file_path) as f:
-        written_data = json.load(f)
-
-
-
 
 
 def print_device(hardware):
@@ -458,7 +453,7 @@ def resolve_device(doni_client, device_ref: "str"):
         uuid = str(UUID(device_ref))
     except ValueError:
         uuid = None
-        for d in doni_client.get(f"/v1/hardware/").json()["hardware"]:
+        for d in doni_client.get("/v1/hardware/").json()["hardware"]:
             if d["name"] == device_ref:
                 uuid = d["uuid"]
                 break
