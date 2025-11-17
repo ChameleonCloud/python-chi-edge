@@ -7,10 +7,9 @@ requires-python = ">=3.9"
 dependencies = [
     "click>=8.0.1,<9",
     "PyYAML~=6.0",
-    "python-chi>=0.15.4,<0.16",
-    "keystoneauth1>=4.4.0,<5",
     "rich>=11.2.0,<12",
     "fattools==1.0.41",
+    "openstacksdk>=4.5.0",
 ]
 
 [project.scripts]

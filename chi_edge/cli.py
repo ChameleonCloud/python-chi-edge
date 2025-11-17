@@ -14,17 +14,15 @@
 import contextlib
 import json
 import logging
-import os
 from datetime import datetime
-from glob import escape
 from pathlib import Path
 from uuid import UUID
 from typing import Any
 
-import chi
+import openstack
 import click
 import yaml
-from keystoneauth1 import adapter
+from keystoneauth1 import adapter as ksa_adapter, session as ksa_session
 from keystoneauth1 import exceptions as ksa_exc
 from rich import box
 from rich.console import Console
@@ -37,6 +35,8 @@ from chi_edge.image import find_boot_partition_id, read_config_json, write_confi
 
 console = Console()
 
+def doni_client(session: ksa_session.Session):
+    return ksa_adapter.Adapter(session, interface="public", service_type="inventory")
 
 class BaseCommand(click.Command):
     """A base command class that handles global option parsing."""
@@ -56,18 +56,21 @@ class BaseCommand(click.Command):
 
 
 @click.group()
-def cli():
+@click.pass_context
+def cli(ctx):
     """Tools for interacting with the CHI@Edge testbed.
 
     See the list of subcommands for futher details about device enrollment or other
     capabilities provided by the SDK.
     """
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj['conn'] = openstack.connect()
 
 
 @cli.group("device", short_help="manage or register devices")
-def device():
-    pass
+@click.pass_context
+def device(ctx):
+    ctx.obj['doni_client'] = doni_client(ctx.obj['conn'].session)
 
 
 @device.command(cls=BaseCommand, short_help="register a new device")
@@ -96,7 +99,9 @@ def device():
     metavar="SECRET",
     help="the secret component of the application credential",
 )
+@click.pass_context
 def register(
+    ctx,
     device_name: "str",
     machine_name: "str" = None,
     contact_email: "str" = None,
@@ -141,8 +146,7 @@ def register(
             raise click.ClickException("device name must match RFC1123 DNS")
 
         device = (
-            doni_client()
-            .post(
+            ctx.obj['doni_client'].post(
                 "/v1/hardware/",
                 json={
                     "name": device_name,
@@ -161,9 +165,10 @@ def register(
 
 
 @device.command("list", cls=BaseCommand, short_help="list registered devices")
-def list_all():
+@click.pass_context
+def list_all(ctx):
     with doni_error_handler("failed to list devices"):
-        devices = doni_client().get("/v1/hardware/").json()["hardware"]
+        devices = ctx.obj['doni_client'].get("/v1/hardware/").json()["hardware"]
         table = make_table()
         table.add_column("Name")
         table.add_column("UUID")
@@ -194,11 +199,11 @@ def list_all():
 
 @device.command(cls=BaseCommand, short_help="show registered device details")
 @click.argument("device")
-def show(device: "str"):
+@click.pass_context
+def show(ctx, device: "str"):
     with doni_error_handler("failed to fetch device"):
-        doni = doni_client()
-        uuid = resolve_device(doni, device)
-        print_device(doni.get(f"/v1/hardware/{uuid}/").json())
+        uuid = resolve_device(ctx.obj['doni_client'], device)
+        print_device(ctx.obj['doni_client'].get(f"/v1/hardware/{uuid}/").json())
 
 
 @device.command(cls=BaseCommand, short_help="update registered device details")
@@ -223,7 +228,9 @@ def show(device: "str"):
     help="Can the device contact IPs on its local network",
     type=click.Choice(LOCAL_EGRESS),
 )
+@click.pass_context
 def set(
+    ctx,
     device: "str",
     contact_email: "str" = None,
     application_credential_id: "str" = None,
@@ -236,8 +243,7 @@ def set(
         return {"op": "add", "path": f"/properties/{prop}", "value": value}
 
     with doni_error_handler("failed to fetch device"):
-        doni = doni_client()
-        uuid = resolve_device(doni, device)
+        uuid = resolve_device(ctx.obj['doni_client'], device)
         patch = []
         if contact_email:
             patch.append(patch_to("contact_email", contact_email))
@@ -259,13 +265,14 @@ def set(
             )
         if local_egress:
             patch.append(patch_to("local_egress", local_egress))
-        print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
+        print_device(ctx.obj['doni_client'].patch(f"/v1/hardware/{uuid}/", json=patch).json())
 
 
 @device.command(cls=BaseCommand, short_help="delete registered device")
 @click.argument("device")
 @click.option("--yes-i-really-really-mean-it", is_flag=True)
-def delete(device: "str", yes_i_really_really_mean_it: "bool" = False):
+@click.pass_context
+def delete(ctx, device: "str", yes_i_really_really_mean_it: "bool" = False):
     if not yes_i_really_really_mean_it:
         raise click.ClickException(
             "Are you sure? Specify --yes-i-really-really-mean-it if so. Deleting the "
@@ -273,19 +280,18 @@ def delete(device: "str", yes_i_really_really_mean_it: "bool" = False):
             "current users of the device on the testbed."
         )
     with doni_error_handler("failed to delete device"):
-        doni = doni_client()
-        uuid = resolve_device(doni, device)
-        doni.delete(f"/v1/hardware/{uuid}/")
+        uuid = resolve_device(ctx.obj['doni_client'], device)
+        ctx.obj['doni_client'].delete(f"/v1/hardware/{uuid}/")
         print("Successfully deleted device")
 
 
 @device.command(cls=BaseCommand, short_help="force device re-sync")
 @click.argument("device")
-def sync(device: "str"):
+@click.pass_context
+def sync(ctx, device: "str"):
     with doni_error_handler("failed to sync device"):
-        doni = doni_client()
-        uuid = resolve_device(doni, device)
-        doni.post(f"/v1/hardware/{uuid}/sync/")
+        uuid = resolve_device(ctx.obj['doni_client'], device)
+        ctx.obj['doni_client'].post(f"/v1/hardware/{uuid}/sync/")
         print("Successfully started device re-sync")
 
 
@@ -302,7 +308,8 @@ def sync(device: "str"):
         "copied anywhere."
     ),
 )
-def bake(device: "str", image: "str" = None):
+@click.pass_context
+def bake(ctx, device: "str", image: "str" = None):
 
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
@@ -312,9 +319,8 @@ def bake(device: "str", image: "str" = None):
     device_hw = None
     with doni_error_handler("failed to bake device"):
         # Check for device in doni
-        doni = doni_client()
-        device_uuid = resolve_device(doni, device)
-        device_hw = doni.get(f"/v1/hardware/{device_uuid}/").json()
+        device_uuid = resolve_device(ctx.obj['doni_client'], device)
+        device_hw = ctx.obj['doni_client'].get(f"/v1/hardware/{device_uuid}/").json()
         balena_workers = [
             worker
             for worker in device_hw["workers"]
@@ -409,8 +415,7 @@ def _verify_config_file(config_data, file_path):
         written_data = json.load(f)
 
 
-def doni_client():
-    return adapter.Adapter(chi.session(), interface="public", service_type="inventory")
+
 
 
 def print_device(hardware):
