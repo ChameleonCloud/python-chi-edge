@@ -573,6 +573,18 @@ wheels = [
 ]
 
 [[package]]
+name = "fattools"
+version = "1.1.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "hexdump" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/56/cd/913c2dae7736b0e9db7dbecaf2fcca63ef05cc1a46ff6abdab9c6e97e593/fattools-1.1.7.tar.gz", hash = "sha256:f7f8ce6b75285bf09bb3e4f55030da5c9d53ff9c2c695291d067a8a6882765a9", size = 129124, upload-time = "2025-10-20T15:25:56.152Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/90/f67c4e9d7c8f48cc0086cb691bd837d43ded44241603e7165a4ed837da94/fattools-1.1.7-py3-none-any.whl", hash = "sha256:fa879fc92375242cdbfc23fda6bde8acc1bf024ee02d275ae0cee33d226ee374", size = 148495, upload-time = "2025-10-20T15:25:54.457Z" },
+]
+
+[[package]]
 name = "futurist"
 version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -620,6 +632,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/03/f1/be0297498c20df97525ddd1bb48bc3a3237321f323e9c24fe45ff576decb/gnureadline-8.2.13-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:dcfa601d95c00aa670ec5e4bf791caf6ba0bcf266de940fb54d44c278bd302fe", size = 160569, upload-time = "2024-10-18T14:04:36.594Z" },
     { url = "https://files.pythonhosted.org/packages/87/7d/9834bc32cf6531c2ec21998d0b0631ddc5f69c31bf2358f9489e27e06dec/gnureadline-8.2.13-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:c7b8d3f2a2c9b7e6feaf1f20bdb6ebb8210e207b8c5360ffe407a47efeeb3fb8", size = 162587, upload-time = "2024-10-18T14:04:39.145Z" },
 ]
+
+[[package]]
+name = "hexdump"
+version = "3.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/b3/279b1d57fa3681725d0db8820405cdcb4e62a9239c205e4ceac4391c78e4/hexdump-3.3.zip", hash = "sha256:d781a43b0c16ace3f9366aade73e8ad3a7bd5137d58f0b45ab2d3f54876f20db", size = 12658, upload-time = "2016-01-22T14:40:19.589Z" }
 
 [[package]]
 name = "idna"
@@ -1413,6 +1431,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "click", version = "8.3.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "fattools" },
     { name = "keystoneauth1" },
     { name = "python-chi" },
     { name = "pyyaml" },
@@ -1428,6 +1447,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.0.1,<9" },
+    { name = "fattools", specifier = ">=1.1.7" },
     { name = "keystoneauth1", specifier = ">=4.4.0,<5" },
     { name = "python-chi", specifier = ">=0.15.4,<0.16" },
     { name = "pyyaml", specifier = "~=6.0" },

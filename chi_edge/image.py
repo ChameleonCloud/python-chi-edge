@@ -1,9 +1,8 @@
 """Utilities for reading and writing to disk image."""
 import json
-from pathlib import Path
 
-from chi_edge.vendor.FATtools import Volume
-from chi_edge.vendor.FATtools.partutils import partition
+from FATtools import Volume
+from FATtools.partutils import partition
 
 
 def find_boot_partition_id(image: str):

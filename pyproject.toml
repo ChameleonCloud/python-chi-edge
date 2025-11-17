@@ -10,6 +10,7 @@ dependencies = [
     "python-chi>=0.15.4,<0.16",
     "keystoneauth1>=4.4.0,<5",
     "rich>=11.2.0,<12",
+    "fattools>=1.1.7",
 ]
 
 [project.scripts]
