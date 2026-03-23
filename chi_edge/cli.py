@@ -14,9 +14,7 @@
 import contextlib
 import json
 import logging
-import os
 from datetime import datetime
-from glob import escape
 from pathlib import Path
 from uuid import UUID
 from typing import Any
@@ -348,7 +346,7 @@ def bake(device: "str", image: "str" = None):
     if image:
         try:
             config = read_config_json(image, boot_part_id, "config.json")
-        except Exception as e:
+        except Exception:
             # This can fail for a number of reasons, mainly if the file for w/e reason
             # is not inside the image (or if that fils is malformed JSON?)
             console.print_exception()
@@ -385,7 +383,6 @@ def bake(device: "str", image: "str" = None):
         json.dump(config, f, indent=2)
 
     if image:
-
         write_config_json(image, boot_part_id, "config.json", config)
 
         try:
@@ -402,11 +399,6 @@ def bake(device: "str", image: "str" = None):
         config_file.unlink()
     else:
         print("Created 'config.json'")
-
-
-def _verify_config_file(config_data, file_path):
-    with open(file_path) as f:
-        written_data = json.load(f)
 
 
 def doni_client():
@@ -453,7 +445,7 @@ def resolve_device(doni_client, device_ref: "str"):
         uuid = str(UUID(device_ref))
     except ValueError:
         uuid = None
-        for d in doni_client.get(f"/v1/hardware/").json()["hardware"]:
+        for d in doni_client.get("/v1/hardware/").json()["hardware"]:
             if d["name"] == device_ref:
                 uuid = d["uuid"]
                 break
