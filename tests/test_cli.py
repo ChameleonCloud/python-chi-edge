@@ -20,9 +20,8 @@ def test_device_group_help():
 
 
 def test_doni_client_returns_adapter():
-    with patch("chi_edge.cli.chi") as mock_chi:
-        mock_chi.session.return_value = MagicMock()
+    with patch("chi_edge.cli.openstack") as mock_os:
+        mock_os.connect.return_value = MagicMock()
         client = doni_client()
         assert client.service_type == "inventory"
         assert client.interface == "public"
-        mock_chi.session.assert_called_once()

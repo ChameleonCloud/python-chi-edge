@@ -19,8 +19,8 @@ from pathlib import Path
 from uuid import UUID
 from typing import Any
 
-import chi
 import click
+import openstack
 import yaml
 from keystoneauth1 import adapter
 from keystoneauth1 import exceptions as ksa_exc
@@ -402,7 +402,8 @@ def bake(device: "str", image: "str" = None):
 
 
 def doni_client():
-    return adapter.Adapter(chi.session(), interface="public", service_type="inventory")
+    conn = openstack.connect()
+    return adapter.Adapter(conn.session, interface="public", service_type="inventory")
 
 
 def print_device(hardware):
