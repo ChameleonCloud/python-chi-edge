@@ -19,8 +19,8 @@ from pathlib import Path
 from uuid import UUID
 from typing import Any
 
-import chi
 import click
+import openstack
 import yaml
 from keystoneauth1 import adapter
 from keystoneauth1 import exceptions as ksa_exc
@@ -54,13 +54,18 @@ class BaseCommand(click.Command):
 
 
 @click.group()
-def cli():
+@click.option(
+    "--os-cloud", envvar="OS_CLOUD", default=None, help="clouds.yaml cloud name"
+)
+@click.pass_context
+def cli(ctx, os_cloud):
     """Tools for interacting with the CHI@Edge testbed.
 
     See the list of subcommands for futher details about device enrollment or other
     capabilities provided by the SDK.
     """
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj["os_cloud"] = os_cloud
 
 
 @cli.group("device", short_help="manage or register devices")
@@ -402,7 +407,9 @@ def bake(device: "str", image: "str" = None):
 
 
 def doni_client():
-    return adapter.Adapter(chi.session(), interface="public", service_type="inventory")
+    ctx = click.get_current_context()
+    conn = openstack.connect(cloud=ctx.obj.get("os_cloud"))
+    return adapter.Adapter(conn.session, interface="public", service_type="inventory")
 
 
 def print_device(hardware):

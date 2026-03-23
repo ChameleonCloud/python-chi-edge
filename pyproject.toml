@@ -8,8 +8,7 @@ requires-python = ">=3.9"
 dependencies = [
     "click",
     "PyYAML",
-    "python-chi",
-    "keystoneauth1",
+    "openstacksdk",
     "rich",
 ]
 
