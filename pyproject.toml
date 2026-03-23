@@ -1,7 +1,21 @@
-[tool.black]
-# Set line length explicitly.
-# See https://black.readthedocs.io/en/stable/the_black_code_style.html#line-length for more details
-line-length = 88
+[project]
+name = "python-chi-edge"
+version = "0.2.4"
+description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
+authors = [{ name = "Chameleon Project", email = "contact@chameleoncloud.org" }]
+requires-python = ">=3.9"
+
+dependencies = [
+    "click",
+    "PyYAML",
+    "python-chi",
+    "keystoneauth1",
+    "rich",
+]
+
+[project.scripts]
+chi-edge = "chi_edge.cli:cli"
+
 
 [tool.pytest.ini_options]
 log_cli = true
@@ -10,41 +24,18 @@ log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(linen
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 filterwarnings = ["ignore::DeprecationWarning"]
 
-[tool.isort]
-known_first_party = "chi_edge"
+[tool.uv]
 
-[tool.poetry]
-name = "python-chi-edge"
-packages = [
-    { include = "chi_edge" }
-]
-version = "0.2.4"
-description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
-authors = [
-    "Chameleon Project <contact@chameleoncloud.org>"
-]
-
-[tool.poetry.scripts]
-chi-edge = "chi_edge.cli:cli"
-
-[tool.poetry.dependencies]
-python = "^3.6.2"
-click = "^8.0.1"
-PyYAML = "^6.0"
-python-chi = "^0.15.4"
-keystoneauth1 = "^4.4.0"
-rich = "^11.2.0"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2"
-black = { version = "^21", allow-prereleases = true }
-flake8 = "^3.9.0"
-flake8-bugbear = "^21.4.1"
-pytest-watch = "^4.2.0"
-pytest-mock = "^3.5.1"
-isort = "^5.8.0"
-pydocstyle = "^6.0.0"
+[tool.uv.build-backend]
+module-name = ["chi_edge"]
+module-root = ""
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.15.7",
+]
