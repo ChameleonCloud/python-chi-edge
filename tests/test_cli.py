@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 
 from click.testing import CliRunner
 
-from chi_edge.cli import cli, doni_client
+from chi_edge.cli import cli
 
 FAKE_DEVICE = {
     "created_at": "2022-03-01T00:34:16+00:00",
@@ -72,19 +72,41 @@ def test_device_group_help():
     assert "register" in result.output
 
 
-def test_doni_client_returns_adapter():
-    with patch("chi_edge.cli.openstack") as mock_os:
-        mock_os.connect.return_value = MagicMock()
-        client = doni_client()
-        assert client.service_type == "inventory"
-        assert client.interface == "public"
+# Test the CLI invocation, see:
+# https://click.palletsprojects.com/en/stable/api/#click.testing.CliRunner
+
+
+def test_os_cloud_flag():
+    mock_adapter = MagicMock()
+    mock_adapter.get.return_value.json.return_value = {"hardware": []}
+    with (
+        patch("chi_edge.cli.openstack") as mock_os,
+        patch("chi_edge.cli.adapter") as mock_adapter_cls,
+    ):
+        mock_adapter_cls.Adapter.return_value = mock_adapter
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--os-cloud", "edge", "device", "list"])
+        assert result.exit_code == 0, result.output
+        mock_os.connect.assert_called_once_with(cloud="edge")
+
+
+def test_os_cloud_env_var():
+    mock_adapter = MagicMock()
+    mock_adapter.get.return_value.json.return_value = {"hardware": []}
+    with (
+        patch("chi_edge.cli.openstack") as mock_os,
+        patch("chi_edge.cli.adapter") as mock_adapter_cls,
+    ):
+        mock_adapter_cls.Adapter.return_value = mock_adapter
+        runner = CliRunner(env={"OS_CLOUD": "edge"})
+        result = runner.invoke(cli, ["device", "list"])
+        assert result.exit_code == 0, result.output
+        mock_os.connect.assert_called_once_with(cloud="edge")
 
 
 def test_device_list():
     mock_adapter = MagicMock()
-    mock_adapter.get.return_value.json.return_value = {
-        "hardware": [FAKE_DEVICE]
-    }
+    mock_adapter.get.return_value.json.return_value = {"hardware": [FAKE_DEVICE]}
 
     runner = CliRunner()
     with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
