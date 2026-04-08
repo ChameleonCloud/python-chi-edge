@@ -89,15 +89,15 @@ def device():
 )
 @click.option(
     "--application-credential-id",
-    required=True,
+    default=None,
     metavar="ID",
-    help="an ID of an application credential created for CHI@Edge",
+    help="an ID of an application credential. If not provided, one will be created automatically.",
 )
 @click.option(
     "--application-credential-secret",
-    required=True,
+    default=None,
     metavar="SECRET",
-    help="the secret component of the application credential",
+    help="the secret component of the application credential.",
 )
 def register(
     device_name: "str",
@@ -116,6 +116,13 @@ def register(
 
     As a result of registration, your device will be issued a UUID, which you can use
     to interact with the testbed via other SDK methods.
+
+    When you register a device, it will be issued an openstack application credential, this
+    delegates *your* access to the device, allowing it to fetch device specific config and
+    update information about its status.
+
+    If you need to customize this process, you can generate a credential manually, and pass
+    it via --application-credential-id and --application-credential-secret.
 
     \b
     Supported devices
@@ -143,8 +150,36 @@ def register(
         if not utils.validate_rfc1123_name(device_name):
             raise click.ClickException("device name must match RFC1123 DNS")
 
+        ctx = click.get_current_context()
+        conn = openstack.connect(cloud=ctx.obj.get("os_cloud"))
+
+        if bool(application_credential_id) != bool(application_credential_secret):
+            raise click.ClickException(
+                "--application-credential-id and --application-credential-secret must be provided together"
+            )
+
+        if not application_credential_id:
+            cred_name = f"chi-edge-{device_name}"
+            for existing in conn.identity.application_credentials(conn.current_user_id):
+                if existing.name == cred_name:
+                    click.confirm(
+                        f"Application credential '{cred_name}' already exists. Delete and recreate it?",
+                        abort=True,
+                    )
+                    conn.identity.delete_application_credential(
+                        conn.current_user_id, existing.id
+                    )
+                    break
+            app_cred = conn.identity.create_application_credential(
+                conn.current_user_id,
+                name=cred_name,
+            )
+            application_credential_id = app_cred.id
+            application_credential_secret = app_cred.secret
+            console.print(f"Created application credential [bold]{app_cred.id}[/bold]")
+
         device = (
-            doni_client()
+            doni_client(conn)
             .post(
                 "/v1/hardware/",
                 json={
@@ -406,9 +441,10 @@ def bake(device: "str", image: "str" = None):
         print("Created 'config.json'")
 
 
-def doni_client():
-    ctx = click.get_current_context()
-    conn = openstack.connect(cloud=ctx.obj.get("os_cloud"))
+def doni_client(conn=None):
+    if not conn:
+        ctx = click.get_current_context()
+        conn = openstack.connect(cloud=ctx.obj.get("os_cloud"))
     return adapter.Adapter(conn.session, interface="public", service_type="inventory")
 
 
