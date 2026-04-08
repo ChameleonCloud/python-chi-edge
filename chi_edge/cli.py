@@ -137,6 +137,8 @@ def register(
       jetson-nano: Nvidia Jetson Nano Devkit
       jetson-xavier-nx-emmc: Nvidia Jetson Xavier NX Devkit
       jetson-orin-nano-devkit-nvme: Nvidia Jetson Orin Nano Devkit
+      jetson-agx-orin-devkit: Nvidia Jetson AGX Orin Devkit 32GB
+      jetson-agx-orin-devkit-64gb: Nvidia Jetson AGX Orin Devkit 64GB
 
     \b
     Naming your device

@@ -20,7 +20,8 @@ SUPPORTED_MACHINE_NAMES = {
     "raspberrypi5": "Raspberry Pi 5",
     "jetson-nano": "Jetson Nano Devkit (SD Card, rev B01)",
     "jetson-xavier-nx-emmc": "Jetson Xavier NX Devkit (eMMC)",
-    "jetson-agx-orin-devkit": "Jetson AGX Orin Devkit",
+    "jetson-agx-orin-devkit": "Jetson AGX Orin Devkit 32GB",
+    "jetson-agx-orin-devkit-64gb": "Jetson AGX Orin Devkit 64GB",
     "jetson-orin-nano-devkit-nvme": "Jetson Orin Nano 8GB (SD) Devkit NVME",
     "coral-dev": "Google Coral Dev Board",
 }
