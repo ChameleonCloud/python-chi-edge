@@ -1,6 +1,6 @@
 [project]
 name = "python-chi-edge"
-version = "0.3.0"
+version = "0.3.1"
 description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
 authors = [{ name = "Chameleon Project", email = "contact@chameleoncloud.org" }]
 readme = "README.md"
@@ -21,6 +21,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://chameleoncloud.org"
+Documentation = "https://chameleoncloud.gitbook.io/chi-edge"
 Repository = "https://github.com/ChameleonCloud/python-chi-edge"
 Issues = "https://github.com/ChameleonCloud/python-chi-edge/issues"
 
