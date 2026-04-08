@@ -160,9 +160,7 @@ def register(
 
         if not application_credential_id:
             cred_name = f"chi-edge-{device_name}"
-            for existing in conn.identity.application_credentials(
-                conn.current_user_id
-            ):
+            for existing in conn.identity.application_credentials(conn.current_user_id):
                 if existing.name == cred_name:
                     click.confirm(
                         f"Application credential '{cred_name}' already exists. Delete and recreate it?",
