@@ -1,9 +1,16 @@
 [project]
 name = "python-chi-edge"
-version = "0.2.4"
+version = "0.3.0"
 description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
 authors = [{ name = "Chameleon Project", email = "contact@chameleoncloud.org" }]
+readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.9"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+]
 
 dependencies = [
     "click",
@@ -11,6 +18,11 @@ dependencies = [
     "openstacksdk",
     "rich",
 ]
+
+[project.urls]
+Homepage = "https://chameleoncloud.org"
+Repository = "https://github.com/ChameleonCloud/python-chi-edge"
+Issues = "https://github.com/ChameleonCloud/python-chi-edge/issues"
 
 [project.scripts]
 chi-edge = "chi_edge.cli:cli"
