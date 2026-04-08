@@ -131,10 +131,12 @@ def register(
     Currently a limited number of machine names (types/classes of devices) are supported:
 
     \b
-      raspberrypi3-64: Raspberry Pi 3 (using 64bit OS)
-      raspberrypi4-64: Raspberry Pi 4 (using 64bit OS)
-      raspberrypi5-64: Raspberry Pi 4 (using 64bit OS)
-      jetson-nano: Jetson Nano Devkit (SD Card, rev B01)
+      raspberrypi3-64: Raspberry Pi 3
+      raspberrypi4-64: Raspberry Pi 4
+      raspberrypi5: Raspberry Pi 5
+      jetson-nano: Nvidia Jetson Nano Devkit
+      jetson-xavier-nx-emmc: Nvidia Jetson Xavier NX Devkit
+      jetson-orin-nano-devkit-nvme: Nvidia Jetson Orin Nano Devkit
 
     \b
     Naming your device
