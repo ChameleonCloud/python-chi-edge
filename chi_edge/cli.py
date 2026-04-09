@@ -137,6 +137,8 @@ def register(
       jetson-nano: Nvidia Jetson Nano Devkit
       jetson-xavier-nx-emmc: Nvidia Jetson Xavier NX Devkit
       jetson-orin-nano-devkit-nvme: Nvidia Jetson Orin Nano Devkit
+      jetson-agx-orin-devkit: Nvidia Jetson AGX Orin Devkit 32GB
+      jetson-agx-orin-devkit-64gb: Nvidia Jetson AGX Orin Devkit 64GB
 
     \b
     Naming your device
@@ -342,7 +344,25 @@ def sync(device: "str"):
         "copied anywhere."
     ),
 )
-def bake(device: "str", image: "str" = None):
+@click.option(
+    "--boot-target-device",
+    metavar="DEVICE",
+    help=(
+        "Storage device on the edge device where balenaOS will be installed "
+        "on first boot (e.g. nvme0n1, mmcblk0). Sets installer.boot_target_devices "
+        "in config.json."
+    ),
+)
+@click.option(
+    "--boot-migrate-force",
+    is_flag=True,
+    default=False,
+    help=(
+        "Automatically reboot into balenaOS after provisioning instead of "
+        "shutting down. Sets installer.migrate.force in config.json."
+    ),
+)
+def bake(device: "str", image: "str" = None, boot_target_device: "str" = None, boot_migrate_force: bool = False):
 
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
@@ -410,6 +430,14 @@ def bake(device: "str", image: "str" = None):
     # Sometimes the pre-baked config.json image has this set in its file
     if "apiKey" in config:
         del config["apiKey"]
+
+    if boot_target_device or boot_migrate_force:
+        installer = config.get("installer", {})
+        if boot_target_device:
+            installer["boot_target_devices"] = boot_target_device
+        if boot_migrate_force:
+            installer.setdefault("migrate", {})["force"] = True
+        config["installer"] = installer
 
     config["appUpdatePollInterval"] = "60000"
     # This is the default Balena supervisor listen port
