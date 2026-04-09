@@ -347,10 +347,11 @@ def sync(device: "str"):
 @click.option(
     "--boot-target-device",
     metavar="DEVICE",
+    multiple=True,
     help=(
         "Storage device on the edge device where balenaOS will be installed "
-        "on first boot (e.g. nvme0n1, mmcblk0). Sets installer.boot_target_devices "
-        "in config.json."
+        "on first boot (e.g. nvme0n1, mmcblk0). Can be specified multiple "
+        "times. Sets installer.target_devices in config.json."
     ),
 )
 @click.option(
@@ -362,7 +363,7 @@ def sync(device: "str"):
         "shutting down. Sets installer.migrate.force in config.json."
     ),
 )
-def bake(device: "str", image: "str" = None, boot_target_device: "str" = None, boot_migrate_force: bool = False):
+def bake(device: "str", image: "str" = None, boot_target_device: "tuple" = (), boot_migrate_force: bool = False):
 
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
@@ -434,7 +435,7 @@ def bake(device: "str", image: "str" = None, boot_target_device: "str" = None, b
     if boot_target_device or boot_migrate_force:
         installer = config.get("installer", {})
         if boot_target_device:
-            installer["boot_target_devices"] = boot_target_device
+            installer["target_devices"] = " ".join(boot_target_device)
         if boot_migrate_force:
             installer.setdefault("migrate", {})["force"] = True
         config["installer"] = installer
