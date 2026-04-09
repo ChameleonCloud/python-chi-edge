@@ -331,6 +331,15 @@ def sync(device: "str"):
         print("Successfully started device re-sync")
 
 
+def apply_installer_config(config, target_devices=(), migrate_force=False):
+    if target_devices or migrate_force:
+        installer = config.get("installer", {})
+        if target_devices:
+            installer["target_devices"] = " ".join(target_devices)
+        if migrate_force:
+            installer.setdefault("migrate", {})["force"] = True
+        config["installer"] = installer
+
 
 @device.command(
     cls=BaseCommand, short_help="configure an OS image for a registered device"
@@ -364,17 +373,12 @@ def sync(device: "str"):
         "shutting down. Sets installer.migrate.force in config.json."
     ),
 )
-
-def apply_installer_config(config, target_devices=(), migrate_force=False):
-    if target_devices or migrate_force:
-        installer = config.get("installer", {})
-        if target_devices:
-            installer["target_devices"] = " ".join(target_devices)
-        if migrate_force:
-            installer.setdefault("migrate", {})["force"] = True
-        config["installer"] = installer
-
-def bake(device: "str", image: "str" = None, boot_target_device: "tuple" = (), boot_migrate_force: bool = False):
+def bake(
+    device: "str",
+    image: "str" = None,
+    boot_target_device: "tuple" = (),
+    boot_migrate_force: bool = False,
+):
 
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
@@ -430,29 +434,29 @@ def bake(device: "str", image: "str" = None, boot_target_device: "tuple" = (), b
 
     # Copy over needed keys to config
     config["uuid"] = device_uuid.replace("-", "").lower()
+    config["deviceId"] = balena_worker.get("device_id")
+    config["deviceType"] = device_hw["properties"]["machine_name"]
     config["hostname"] = device_hw["name"]
     config["applicationId"] = balena_fleet_id
     config["userId"] = None
     config["deviceApiKey"] = balena_device_api_key
-    config["deviceApiKeys"] = {"api.balena-cloud.com": balena_device_api_key}
-    config["registered_at"] = config["registeredAt"] = str(
-        # Store in microseconds
-        int(parse_date(device_hw["created_at"]).timestamp() * 1000)
-    )
+    config["registered_at"] = int(parse_date(device_hw["created_at"]).timestamp())
+
     # Sometimes the pre-baked config.json image has this set in its file
     if "apiKey" in config:
         del config["apiKey"]
 
     apply_installer_config(config, boot_target_device, boot_migrate_force)
 
-    config["appUpdatePollInterval"] = "60000"
+    config["appUpdatePollInterval"] = 60000
     # This is the default Balena supervisor listen port
-    config["listenPort"] = "48484"
-    config["vpnPort"] = "443"
+    config["listenPort"] = 48484
+    config["vpnPort"] = 443
     config["apiEndpoint"] = "https://api.balena-cloud.com"
-    config["vpnEndpoint"] = "vpn.balena-cloud.com"
+    config["vpnEndpoint"] = "cloudlink.balena-cloud.com"
     config["registryEndpoint"] = "registry2.balena-cloud.com"
     config["deltaEndpoint"] = "https://delta.balena-cloud.com"
+    config["logsEndpoint"] = "https://logs.balena-cloud.com"
 
     # Put config data back into image
     with config_file.open("w") as f:
