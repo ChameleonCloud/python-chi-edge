@@ -331,6 +331,7 @@ def sync(device: "str"):
         print("Successfully started device re-sync")
 
 
+
 @device.command(
     cls=BaseCommand, short_help="configure an OS image for a registered device"
 )
@@ -363,6 +364,16 @@ def sync(device: "str"):
         "shutting down. Sets installer.migrate.force in config.json."
     ),
 )
+
+def apply_installer_config(config, target_devices=(), migrate_force=False):
+    if target_devices or migrate_force:
+        installer = config.get("installer", {})
+        if target_devices:
+            installer["target_devices"] = " ".join(target_devices)
+        if migrate_force:
+            installer.setdefault("migrate", {})["force"] = True
+        config["installer"] = installer
+
 def bake(device: "str", image: "str" = None, boot_target_device: "tuple" = (), boot_migrate_force: bool = False):
 
     config_file = Path("config.json")
@@ -432,13 +443,7 @@ def bake(device: "str", image: "str" = None, boot_target_device: "tuple" = (), b
     if "apiKey" in config:
         del config["apiKey"]
 
-    if boot_target_device or boot_migrate_force:
-        installer = config.get("installer", {})
-        if boot_target_device:
-            installer["target_devices"] = " ".join(boot_target_device)
-        if boot_migrate_force:
-            installer.setdefault("migrate", {})["force"] = True
-        config["installer"] = installer
+    apply_installer_config(config, boot_target_device, boot_migrate_force)
 
     config["appUpdatePollInterval"] = "60000"
     # This is the default Balena supervisor listen port

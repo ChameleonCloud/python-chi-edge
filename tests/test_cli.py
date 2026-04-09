@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 
 from click.testing import CliRunner
 
-from chi_edge.cli import cli
+from chi_edge.cli import cli, apply_installer_config
 
 FAKE_DEVICE = {
     "created_at": "2022-03-01T00:34:16+00:00",
@@ -125,3 +125,18 @@ def test_device_show():
         assert result.exit_code == 0, result.output
         assert "iot-rpi4-01" in result.output
         assert "raspberrypi4-64" in result.output
+
+
+def test_installer_target_device_only():
+    config = {}
+    apply_installer_config(config, target_devices=("nvme0n1",))
+    assert config["installer"] == {"target_devices": "nvme0n1"}
+
+
+def test_installer_multiple_target_devices_with_migrate():
+    config = {}
+    apply_installer_config(config, target_devices=("sda", "nvme0n1"), migrate_force=True)
+    assert config["installer"] == {
+        "target_devices": "sda nvme0n1",
+        "migrate": {"force": True},
+    }
