@@ -362,7 +362,12 @@ def sync(device: "str"):
         "shutting down. Sets installer.migrate.force in config.json."
     ),
 )
-def bake(device: "str", image: "str" = None, boot_target_device: "str" = None, boot_migrate_force: bool = False):
+def bake(
+    device: "str",
+    image: "str" = None,
+    boot_target_device: "str" = None,
+    boot_migrate_force: bool = False,
+):
 
     config_file = Path("config.json")
     # Ensure we do not overwrite a `config.json` file on the user's system
