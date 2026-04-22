@@ -185,3 +185,74 @@ def test_device_set_no_flags_sends_empty_patch():
             f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
             json=[],
         )
+
+
+def test_device_set_unset_single():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device", "set", FAKE_DEVICE["uuid"],
+                "--unset", "contact_email",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[
+                {"op": "remove", "path": "/properties/contact_email"},
+            ],
+        )
+
+
+def test_device_set_unset_multiple():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device", "set", FAKE_DEVICE["uuid"],
+                "--unset", "contact_email",
+                "--unset", "authorized_projects",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[
+                {"op": "remove", "path": "/properties/contact_email"},
+                {"op": "remove", "path": "/properties/authorized_projects"},
+            ],
+        )
+
+
+def test_device_set_with_set_and_unset_combined():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device", "set", FAKE_DEVICE["uuid"],
+                "--contact-email", "new@example.com",
+                "--unset", "authorized_projects",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[
+                {"op": "add", "path": "/properties/contact_email",
+                 "value": "new@example.com"},
+                {"op": "remove", "path": "/properties/authorized_projects"},
+            ],
+        )

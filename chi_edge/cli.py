@@ -265,6 +265,12 @@ def show(device: "str"):
     help="Can the device contact IPs on its local network",
     type=click.Choice(LOCAL_EGRESS),
 )
+@click.option(
+    "--unset",
+    "unset",
+    multiple=True,
+    help="Property to clear. Repeat for multiple.",
+)
 def set(
     device: "str",
     contact_email: "str" = None,
@@ -273,6 +279,7 @@ def set(
     authorized_projects: "str" = None,
     authorized_projects_reason: "str" = None,
     local_egress: "str" = None,
+    unset: "tuple[str, ...]" = (),
 ):
     def patch_to(prop, value):
         return {"op": "add", "path": f"/properties/{prop}", "value": value}
@@ -301,6 +308,8 @@ def set(
             )
         if local_egress:
             patch.append(patch_to("local_egress", local_egress))
+        for prop in unset:
+            patch.append({"op": "remove", "path": f"/properties/{prop}"})
         print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
 
 
