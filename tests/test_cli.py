@@ -351,3 +351,79 @@ def test_device_set_rejects_set_and_unset_of_same_property():
         assert result.exit_code != 0
         assert "Cannot both set and unset --contact-email" in result.output
         mock_adapter.patch.assert_not_called()
+
+
+def _register_mocks(project_id: "str | None" = "proj-abc"):
+    """Return (mock_conn, mock_adapter) wired for a successful register."""
+    mock_conn = MagicMock()
+    mock_conn.current_project_id = project_id
+    mock_conn.current_user_id = "user-xyz"
+    mock_conn.identity.application_credentials.return_value = []
+    mock_conn.identity.create_application_credential.return_value = MagicMock(
+        id="cred-id", secret="cred-secret"
+    )
+    mock_adapter = MagicMock()
+    mock_adapter.post.return_value.json.return_value = FAKE_DEVICE
+    return mock_conn, mock_adapter
+
+
+def test_register_auto_authorizes_owning_project():
+    mock_conn, mock_adapter = _register_mocks(project_id="proj-abc")
+
+    runner = CliRunner()
+    with (
+        patch("chi_edge.cli.openstack") as mock_os,
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+        patch("chi_edge.cli.utils.validate_rfc1123_name", return_value=True),
+    ):
+        mock_os.connect.return_value = mock_conn
+        result = runner.invoke(
+            cli,
+            [
+                "device",
+                "register",
+                "iot-rpi4-01",
+                "--machine-name",
+                "raspberrypi4-64",
+                "--contact-email",
+                "test@example.com",
+                "--application-credential-id",
+                "cid",
+                "--application-credential-secret",
+                "csec",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        ((_, kwargs),) = mock_adapter.post.call_args_list
+        assert kwargs["json"]["properties"]["authorized_projects"] == ["proj-abc"]
+
+
+def test_register_fails_without_project_scope():
+    mock_conn, mock_adapter = _register_mocks(project_id=None)
+
+    runner = CliRunner()
+    with (
+        patch("chi_edge.cli.openstack") as mock_os,
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+        patch("chi_edge.cli.utils.validate_rfc1123_name", return_value=True),
+    ):
+        mock_os.connect.return_value = mock_conn
+        result = runner.invoke(
+            cli,
+            [
+                "device",
+                "register",
+                "iot-rpi4-01",
+                "--machine-name",
+                "raspberrypi4-64",
+                "--contact-email",
+                "test@example.com",
+                "--application-credential-id",
+                "cid",
+                "--application-credential-secret",
+                "csec",
+            ],
+        )
+        assert result.exit_code != 0
+        assert "no project scope" in result.output
+        mock_adapter.post.assert_not_called()
