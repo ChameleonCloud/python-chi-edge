@@ -256,3 +256,21 @@ def test_device_set_with_set_and_unset_combined():
                 {"op": "remove", "path": "/properties/authorized_projects"},
             ],
         )
+
+
+def test_device_set_rejects_set_and_unset_of_same_property():
+    mock_adapter = MagicMock()
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device", "set", FAKE_DEVICE["uuid"],
+                "--contact-email", "new@example.com",
+                "--unset", "contact_email",
+            ],
+        )
+        assert result.exit_code != 0
+        assert "Cannot both set and unset --contact-email" in result.output
+        mock_adapter.patch.assert_not_called()

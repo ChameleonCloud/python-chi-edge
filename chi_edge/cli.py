@@ -284,6 +284,12 @@ def set(
     def patch_to(prop, value):
         return {"op": "add", "path": f"/properties/{prop}", "value": value}
 
+    for prop in unset:
+        if locals().get(prop):
+            raise click.UsageError(
+                f"Cannot both set and unset --{prop.replace('_', '-')}"
+            )
+
     with doni_error_handler("failed to fetch device"):
         doni = doni_client()
         uuid = resolve_device(doni, device)
