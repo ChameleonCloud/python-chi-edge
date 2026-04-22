@@ -136,16 +136,22 @@ def test_device_set_scalar():
         result = runner.invoke(
             cli,
             [
-                "device", "set", FAKE_DEVICE["uuid"],
-                "--contact-email", "new@example.com",
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--contact-email",
+                "new@example.com",
             ],
         )
         assert result.exit_code == 0, result.output
         mock_adapter.patch.assert_called_once_with(
             f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
             json=[
-                {"op": "add", "path": "/properties/contact_email",
-                 "value": "new@example.com"},
+                {
+                    "op": "add",
+                    "path": "/properties/contact_email",
+                    "value": "new@example.com",
+                },
             ],
         )
 
@@ -159,16 +165,22 @@ def test_device_set_authorized_projects_splits_on_comma():
         result = runner.invoke(
             cli,
             [
-                "device", "set", FAKE_DEVICE["uuid"],
-                "--authorized-projects", "proj-a,proj-b,proj-c",
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--authorized-projects",
+                "proj-a,proj-b,proj-c",
             ],
         )
         assert result.exit_code == 0, result.output
         mock_adapter.patch.assert_called_once_with(
             f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
             json=[
-                {"op": "add", "path": "/properties/authorized_projects",
-                 "value": ["proj-a", "proj-b", "proj-c"]},
+                {
+                    "op": "add",
+                    "path": "/properties/authorized_projects",
+                    "value": ["proj-a", "proj-b", "proj-c"],
+                },
             ],
         )
 
@@ -196,8 +208,11 @@ def test_device_set_unset_single():
         result = runner.invoke(
             cli,
             [
-                "device", "set", FAKE_DEVICE["uuid"],
-                "--unset", "contact_email",
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--unset",
+                "contact_email",
             ],
         )
         assert result.exit_code == 0, result.output
@@ -218,9 +233,13 @@ def test_device_set_unset_multiple():
         result = runner.invoke(
             cli,
             [
-                "device", "set", FAKE_DEVICE["uuid"],
-                "--unset", "contact_email",
-                "--unset", "authorized_projects",
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--unset",
+                "contact_email",
+                "--unset",
+                "authorized_projects",
             ],
         )
         assert result.exit_code == 0, result.output
@@ -242,17 +261,24 @@ def test_device_set_with_set_and_unset_combined():
         result = runner.invoke(
             cli,
             [
-                "device", "set", FAKE_DEVICE["uuid"],
-                "--contact-email", "new@example.com",
-                "--unset", "authorized_projects",
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--contact-email",
+                "new@example.com",
+                "--unset",
+                "authorized_projects",
             ],
         )
         assert result.exit_code == 0, result.output
         mock_adapter.patch.assert_called_once_with(
             f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
             json=[
-                {"op": "add", "path": "/properties/contact_email",
-                 "value": "new@example.com"},
+                {
+                    "op": "add",
+                    "path": "/properties/contact_email",
+                    "value": "new@example.com",
+                },
                 {"op": "remove", "path": "/properties/authorized_projects"},
             ],
         )
@@ -266,9 +292,13 @@ def test_device_set_rejects_set_and_unset_of_same_property():
         result = runner.invoke(
             cli,
             [
-                "device", "set", FAKE_DEVICE["uuid"],
-                "--contact-email", "new@example.com",
-                "--unset", "contact_email",
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--contact-email",
+                "new@example.com",
+                "--unset",
+                "contact_email",
             ],
         )
         assert result.exit_code != 0
