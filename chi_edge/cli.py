@@ -203,7 +203,14 @@ def register(
 
 
 @device.command("list", cls=BaseCommand, short_help="list registered devices")
-def list_all():
+@click.option(
+    "--long",
+    "long_",
+    is_flag=True,
+    default=False,
+    help="Show additional columns including project restrictions and contact.",
+)
+def list_all(long_: "bool" = False):
     with doni_error_handler("failed to list devices"):
         devices = doni_client().get("/v1/hardware/").json()["hardware"]
         table = make_table()
@@ -212,6 +219,11 @@ def list_all():
         table.add_column("Registered at")
         table.add_column("Health")
         table.add_column("Last seen")
+        if long_:
+            table.add_column("Type")
+            table.add_column("Restricted to")
+            table.add_column("Contact")
+            table.add_column("Local egress")
         for device in devices:
             balena_worker = None
             ok_workers, total_workers = 0, 0
@@ -222,7 +234,7 @@ def list_all():
                 if worker["worker_type"] == "balena":
                     balena_worker = worker
             registration_state = f"{ok_workers}/{total_workers}"
-            table.add_row(
+            row = [
                 device["name"],
                 device["uuid"],
                 localize(device["created_at"]),
@@ -230,7 +242,14 @@ def list_all():
                 localize(balena_worker["state_details"].get("last_seen", "--"))
                 if balena_worker
                 else "--",
-            )
+            ]
+            if long_:
+                projects = device["properties"].get("authorized_projects") or []
+                row.append(device["properties"].get("machine_name") or "--")
+                row.append(", ".join(projects) if projects else "public")
+                row.append(device["properties"].get("contact_email") or "--")
+                row.append(device["properties"].get("local_egress") or "--")
+            table.add_row(*row)
         console.print(table)
 
 
