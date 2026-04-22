@@ -125,3 +125,63 @@ def test_device_show():
         assert result.exit_code == 0, result.output
         assert "iot-rpi4-01" in result.output
         assert "raspberrypi4-64" in result.output
+
+
+def test_device_set_scalar():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device", "set", FAKE_DEVICE["uuid"],
+                "--contact-email", "new@example.com",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[
+                {"op": "add", "path": "/properties/contact_email",
+                 "value": "new@example.com"},
+            ],
+        )
+
+
+def test_device_set_authorized_projects_splits_on_comma():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device", "set", FAKE_DEVICE["uuid"],
+                "--authorized-projects", "proj-a,proj-b,proj-c",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[
+                {"op": "add", "path": "/properties/authorized_projects",
+                 "value": ["proj-a", "proj-b", "proj-c"]},
+            ],
+        )
+
+
+def test_device_set_no_flags_sends_empty_patch():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(cli, ["device", "set", FAKE_DEVICE["uuid"]])
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[],
+        )
