@@ -1,6 +1,7 @@
 from unittest.mock import patch, MagicMock
 
 from click.testing import CliRunner
+from rich.console import Console
 
 from chi_edge.cli import cli
 
@@ -113,6 +114,52 @@ def test_device_list():
         result = runner.invoke(cli, ["device", "list"])
         assert result.exit_code == 0, result.output
         assert "iot-rpi4-01" in result.output
+        assert "Restricted" not in result.output
+        assert "Contact" not in result.output
+
+
+def test_device_list_long_shows_extra_columns():
+    restricted = {
+        **FAKE_DEVICE,
+        "name": "iot-rpi4-restricted",
+        "uuid": "11111111-1111-1111-1111-111111111111",
+        "properties": {
+            **FAKE_DEVICE["properties"],
+            "authorized_projects": ["proj-a", "proj-b"],
+            "local_egress": "allowed",
+        },
+    }
+    public = {
+        **FAKE_DEVICE,
+        "name": "iot-rpi4-public",
+        "uuid": "22222222-2222-2222-2222-222222222222",
+        "properties": {
+            k: v
+            for k, v in FAKE_DEVICE["properties"].items()
+            if k != "authorized_projects"
+        },
+    }
+
+    mock_adapter = MagicMock()
+    mock_adapter.get.return_value.json.return_value = {
+        "hardware": [restricted, public],
+    }
+
+    runner = CliRunner()
+    with (
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+        patch("chi_edge.cli.console", Console(width=300)),
+    ):
+        result = runner.invoke(cli, ["device", "list", "--long"])
+        assert result.exit_code == 0, result.output
+        for header in ("Type", "Restricted to", "Contact", "Local egress"):
+            assert header in result.output
+        assert "raspberrypi4-64" in result.output
+        assert "proj-a" in result.output
+        assert "proj-b" in result.output
+        assert "public" in result.output
+        assert "test@example.com" in result.output
+        assert "allowed" in result.output
 
 
 def test_device_show():
