@@ -14,7 +14,7 @@
 import contextlib
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 from typing import Any
@@ -239,9 +239,7 @@ def list_all(long_: "bool" = False):
                 device["uuid"],
                 localize(device["created_at"]),
                 registration_state,
-                localize(balena_worker["state_details"].get("last_seen", "--"))
-                if balena_worker
-                else "--",
+                _last_seen_cell(balena_worker),
             ]
             if long_:
                 projects = device["properties"].get("authorized_projects") or []
@@ -532,8 +530,8 @@ def print_device(hardware):
     workers = hardware["workers"]
     cols = [""] + [w["worker_type"] for w in workers]
     worker_table = make_table(*cols, header_style="blue")
-    for key in ["state", "state_details"]:
-        worker_table.add_row(*([key] + [format_value(w[key]) for w in workers]))
+    for key in ["state", "state_details", "observed_state"]:
+        worker_table.add_row(*([key] + [format_value(w.get(key)) for w in workers]))
     outer.add_row(worker_table)
     console.print(Panel(outer, title=title, title_align="left"))
 
@@ -569,8 +567,12 @@ def resolve_device(doni_client, device_ref: "str"):
 
 
 def parse_date(utc_datestr):
-    parsed_date = datetime.strptime(utc_datestr, "%Y-%m-%dT%H:%M:%S+00:00")
-    return parsed_date
+    if utc_datestr.endswith("Z"):
+        utc_datestr = utc_datestr[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(utc_datestr)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def localize(utc_datestr):
@@ -580,6 +582,33 @@ def localize(utc_datestr):
         return parse_date(utc_datestr).astimezone().isoformat()
     except ValueError:
         return utc_datestr
+
+
+def humanize_delta(seconds: int) -> str:
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m"
+    if seconds < 86400:
+        h, m = divmod(seconds, 3600)
+        return f"{h}h {m // 60}m"
+    return f"{seconds // 86400}d"
+
+
+def _last_seen_cell(balena_worker):
+    if not balena_worker:
+        return "--"
+    observed = balena_worker.get("observed_state") or {}
+    if not observed:
+        return "--"
+    if observed.get("is_online"):
+        return "[green]online[/green]"
+    last_event = observed.get("last_connectivity_event")
+    if not last_event:
+        return "--"
+    delta = datetime.now(timezone.utc) - parse_date(last_event)
+    duration = humanize_delta(int(delta.total_seconds()))
+    return f"[red]offline for {duration}[/red]"
 
 
 def format_value(value):

@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import patch, MagicMock
 
 from click.testing import CliRunner
@@ -25,6 +26,10 @@ FAKE_DEVICE = {
                 "device_id": 6217514,
                 "fleet_id": 1918419,
                 "last_seen": "2025-11-07T17:29:43+00:00",
+            },
+            "observed_state": {
+                "is_online": True,
+                "last_connectivity_event": "2025-11-07T17:29:43.123Z",
             },
         },
         {
@@ -162,16 +167,54 @@ def test_device_list_long_shows_extra_columns():
         assert "allowed" in result.output
 
 
+def test_device_list_shows_online_status():
+    mock_adapter = MagicMock()
+    mock_adapter.get.return_value.json.return_value = {"hardware": [FAKE_DEVICE]}
+
+    runner = CliRunner()
+    with (
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+        patch("chi_edge.cli.console", Console(width=300)),
+    ):
+        result = runner.invoke(cli, ["device", "list"])
+        assert result.exit_code == 0, result.output
+        assert "online" in result.output
+
+
+def test_device_list_shows_offline_status():
+    device = copy.deepcopy(FAKE_DEVICE)
+    for w in device["workers"]:
+        if w["worker_type"] == "balena":
+            w["observed_state"]["is_online"] = False
+
+    mock_adapter = MagicMock()
+    mock_adapter.get.return_value.json.return_value = {"hardware": [device]}
+
+    runner = CliRunner()
+    with (
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+        patch("chi_edge.cli.console", Console(width=300)),
+    ):
+        result = runner.invoke(cli, ["device", "list"])
+        assert result.exit_code == 0, result.output
+        assert "offline for" in result.output
+
+
 def test_device_show():
     mock_adapter = MagicMock()
     mock_adapter.get.return_value.json.return_value = FAKE_DEVICE
 
     runner = CliRunner()
-    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+    with (
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+        patch("chi_edge.cli.console", Console(width=300)),
+    ):
         result = runner.invoke(cli, ["device", "show", FAKE_DEVICE["uuid"]])
         assert result.exit_code == 0, result.output
         assert "iot-rpi4-01" in result.output
         assert "raspberrypi4-64" in result.output
+        assert "is_online" in result.output
+        assert "last_connectivity_event" in result.output
 
 
 def test_device_set_scalar():
