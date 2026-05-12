@@ -49,7 +49,7 @@ class BaseCommand(click.Command):
 
     def invoke(self, ctx: "click.Context") -> "Any":
         debug = ctx.params.pop("debug")
-        logging.basicConfig(level=logging.DEBUG if debug else logging.FATAL)
+        logging.basicConfig(level=logging.DEBUG if debug else logging.WARNING)
         return super().invoke(ctx)
 
 
