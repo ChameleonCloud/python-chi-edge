@@ -30,3 +30,12 @@ LOCAL_EGRESS = [
     "allow",
     "deny",
 ]
+
+SETTABLE_PROPERTIES = (
+    "contact_email",
+    "application_credential_id",
+    "application_credential_secret",
+    "authorized_projects",
+    "authorized_projects_reason",
+    "local_egress",
+)

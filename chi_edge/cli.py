@@ -30,7 +30,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from chi_edge import LOCAL_EGRESS, SUPPORTED_MACHINE_NAMES, utils
+from chi_edge import LOCAL_EGRESS, SUPPORTED_MACHINE_NAMES, SETTABLE_PROPERTIES, utils
 from chi_edge.image import find_boot_partition_id, read_config_json, write_config_json
 
 console = Console()
@@ -273,6 +273,7 @@ def show(device: "str"):
         "A list of Chameleon projects (names or IDs) that will be allowed to reserve "
         "and use the device. Specify as a comma-separated list."
     ),
+    type=lambda v: v.split(",")
 )
 @click.option(
     "--authorized-projects-reason",
@@ -288,54 +289,41 @@ def show(device: "str"):
     "--unset",
     "unset",
     multiple=True,
+    type=click.Choice(SETTABLE_PROPERTIES),
     help="Property to clear. Repeat for multiple.",
 )
 def set(
     device: "str",
-    contact_email: "str" = None,
-    application_credential_id: "str" = None,
-    application_credential_secret: "str" = None,
-    authorized_projects: "str" = None,
-    authorized_projects_reason: "str" = None,
-    local_egress: "str" = None,
-    unset: "tuple[str, ...]" = (),
+    unset: "tuple[str, ...]",
+    **kwargs,
 ):
-    def patch_to(prop, value):
+    def patch_add(prop, value):
         return {"op": "add", "path": f"/properties/{prop}", "value": value}
 
-    for prop in unset:
-        if locals().get(prop):
-            raise click.UsageError(
-                f"Cannot both set and unset --{prop.replace('_', '-')}"
-            )
+    def patch_remove(prop):
+        return {"op": "remove", "path": f"/properties/{prop}"}
 
     with doni_error_handler("failed to fetch device"):
         doni = doni_client()
         uuid = resolve_device(doni, device)
-        patch = []
-        if contact_email:
-            patch.append(patch_to("contact_email", contact_email))
-        if application_credential_id:
-            patch.append(
-                patch_to("application_credential_id", application_credential_id)
-            )
-        if application_credential_secret:
-            patch.append(
-                patch_to("application_credential_secret", application_credential_secret)
-            )
-        if authorized_projects:
-            patch.append(
-                patch_to("authorized_projects", authorized_projects.split(","))
-            )
-        if authorized_projects_reason:
-            patch.append(
-                patch_to("authorized_projects_reason", authorized_projects_reason)
-            )
-        if local_egress:
-            patch.append(patch_to("local_egress", local_egress))
-        for prop in unset:
-            patch.append({"op": "remove", "path": f"/properties/{prop}"})
-        print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
+        device_data = doni.get(f"/v1/hardware/{uuid}/").json()
+        existing = device_data["properties"]
+
+    json_patch = []
+    for prop in SETTABLE_PROPERTIES:
+        value = kwargs.get(prop)
+        if value:
+            json_patch.append(patch_add(prop=prop, value=value))
+        elif prop in unset and prop in existing:
+            json_patch.append(patch_remove(prop=prop))
+        else:
+            # the paramater wasn't specified, so skip it.
+            continue
+    if json_patch:
+        with doni_error_handler("failed to apply patch"):
+            device_data = doni.patch(f"/v1/hardware/{uuid}/", json=json_patch).json()
+
+    print_device(device_data)
 
 
 @device.command(cls=BaseCommand, short_help="delete registered device")
