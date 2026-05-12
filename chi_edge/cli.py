@@ -14,7 +14,7 @@
 import contextlib
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 from typing import Any
@@ -25,7 +25,7 @@ import yaml
 from keystoneauth1 import adapter
 from keystoneauth1 import exceptions as ksa_exc
 from rich import box
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
@@ -201,6 +201,47 @@ def register(
         )
         print_device(device)
 
+def _get_device_row(device: dict, long: bool = False):
+
+    row = [
+        device["uuid"],
+        device["name"],
+        device["properties"].get("machine_name") or "--",
+    ]
+
+    workers = device["workers"]
+
+
+
+    balena_workers = [w for w in workers if w["worker_type"] == "balena"]
+    if len(balena_workers) > 1:
+        raise RuntimeError(f"Device {device['uuid']} has multiple balena workers")
+    if balena_workers:
+        observed = balena_workers[0].get("observed_state", {})
+        last_event = observed.get("last_connectivity_event")
+        if last_event:
+            delta = datetime.now(timezone.utc) - parse_date(last_event)
+            duration = humanize_delta(int(delta.total_seconds()))
+            if observed.get("is_online"):
+                last_seen = f"[green]online for {duration}[/green]"
+            else:
+                last_seen = f"[red]offline for {duration}[/red]"
+        else:
+            last_seen = "--"
+    else:
+        last_seen = "--"
+    row.append(last_seen)
+
+    steady = sum(1 for w in workers if w["state"] == "STEADY")
+    workers_ready = f"{steady}/{len(workers)}"
+    row.append(workers_ready)
+
+    if long:
+        projects = device["properties"].get("authorized_projects") or []
+        row.append(", ".join(projects) if projects else "public")
+        row.append(device["properties"].get("contact_email") or "--")
+        row.append(device["properties"].get("local_egress") or "--")
+    return row
 
 @device.command("list", cls=BaseCommand, short_help="list registered devices")
 @click.option(
@@ -213,45 +254,21 @@ def register(
 def list_all(long_: "bool" = False):
     with doni_error_handler("failed to list devices"):
         devices = doni_client().get("/v1/hardware/").json()["hardware"]
-        table = make_table()
-        table.add_column("Name")
-        table.add_column("UUID")
-        table.add_column("Registered at")
-        table.add_column("Health")
-        table.add_column("Last seen")
-        if long_:
-            table.add_column("Type")
-            table.add_column("Restricted to")
-            table.add_column("Contact")
-            table.add_column("Local egress")
-        for device in devices:
-            balena_worker = None
-            ok_workers, total_workers = 0, 0
-            for worker in device["workers"]:
-                total_workers += 1
-                if worker["state"] == "STEADY":
-                    ok_workers += 1
-                if worker["worker_type"] == "balena":
-                    balena_worker = worker
-            registration_state = f"{ok_workers}/{total_workers}"
-            row = [
-                device["name"],
-                device["uuid"],
-                localize(device["created_at"]),
-                registration_state,
-                localize(balena_worker["state_details"].get("last_seen", "--"))
-                if balena_worker
-                else "--",
-            ]
-            if long_:
-                projects = device["properties"].get("authorized_projects") or []
-                row.append(device["properties"].get("machine_name") or "--")
-                row.append(", ".join(projects) if projects else "public")
-                row.append(device["properties"].get("contact_email") or "--")
-                row.append(device["properties"].get("local_egress") or "--")
-            table.add_row(*row)
-        console.print(table)
 
+    headers = [
+        "UUID", 
+        "Name", 
+        "Type",
+        "Balena Last Seen",
+        "Workers Finished",
+        ]
+    if long_:
+        headers.extend(["Restricted to", "Contact", "Local egress"])
+    table = make_table(*headers)
+
+    for device in devices:
+        table.add_row(*_get_device_row(device, long=long_))
+    console.print(table)
 
 @device.command(cls=BaseCommand, short_help="show registered device details")
 @click.argument("device")
@@ -518,24 +535,22 @@ def doni_client(conn=None):
 
 
 def print_device(hardware):
-    outer = Table(show_header=False, padding=(0, 0), pad_edge=False, show_edge=False)
-    table = make_table()
-    table.add_column("Property")
-    table.add_column("Value")
+    property_table = make_table("Property", "Value")
     for prop, value in hardware["properties"].items():
-        table.add_row(prop, format_value(value))
-    title = Text()
-    title.append(hardware["name"], style="bold green")
-    title.append(" ── " + hardware["uuid"])
-    outer.add_row(table)
-    outer.add_row("Health details")
+        property_table.add_row(prop, format_value(value))
+
     workers = hardware["workers"]
-    cols = [""] + [w["worker_type"] for w in workers]
-    worker_table = make_table(*cols, header_style="blue")
+    worker_table = make_table(
+        "", *(w["worker_type"] for w in workers), header_style="blue"
+    )
     for key in ["state", "state_details"]:
-        worker_table.add_row(*([key] + [format_value(w[key]) for w in workers]))
-    outer.add_row(worker_table)
-    console.print(Panel(outer, title=title, title_align="left"))
+        worker_table.add_row(key, *(format_value(w[key]) for w in workers))
+
+    title = Text(hardware["name"], style="bold green")
+    title.append(" ── " + hardware["uuid"])
+
+    content = Group(property_table, Text("Health details"), worker_table)
+    console.print(Panel(content, title=title, title_align="left"))
 
 
 @contextlib.contextmanager
@@ -569,8 +584,12 @@ def resolve_device(doni_client, device_ref: "str"):
 
 
 def parse_date(utc_datestr):
-    parsed_date = datetime.strptime(utc_datestr, "%Y-%m-%dT%H:%M:%S+00:00")
-    return parsed_date
+    if utc_datestr.endswith("Z"):
+        utc_datestr = utc_datestr[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(utc_datestr)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def localize(utc_datestr):
@@ -580,6 +599,17 @@ def localize(utc_datestr):
         return parse_date(utc_datestr).astimezone().isoformat()
     except ValueError:
         return utc_datestr
+
+
+def humanize_delta(seconds: int) -> str:
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m"
+    if seconds < 86400:
+        h, m = divmod(seconds, 3600)
+        return f"{h}h {m // 60}m"
+    return f"{seconds // 86400}d"
 
 
 def format_value(value):
