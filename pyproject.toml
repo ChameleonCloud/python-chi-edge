@@ -1,6 +1,6 @@
 [project]
 name = "python-chi-edge"
-version = "0.3.2"
+version = "0.3.3"
 description = "Manage edge devices for use with the CHI@Edge IoT/Edge testbed."
 authors = [{ name = "Chameleon Project", email = "contact@chameleoncloud.org" }]
 readme = "README.md"
