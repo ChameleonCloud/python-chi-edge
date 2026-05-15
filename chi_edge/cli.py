@@ -14,6 +14,7 @@
 import contextlib
 import json
 import logging
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
@@ -25,7 +26,7 @@ import yaml
 from keystoneauth1 import adapter
 from keystoneauth1 import exceptions as ksa_exc
 from rich import box
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
@@ -202,6 +203,45 @@ def register(
         print_device(device)
 
 
+def build_device_table(devices, long_: "bool" = False):
+    table = make_table()
+    table.add_column("Name")
+    table.add_column("UUID")
+    table.add_column("Registered at")
+    table.add_column("Health")
+    table.add_column("Last seen")
+    if long_:
+        table.add_column("Type")
+        table.add_column("Restricted to")
+        table.add_column("Contact")
+        table.add_column("Local egress")
+    for device in devices:
+        balena_worker = None
+        ok_workers, total_workers = 0, 0
+        for worker in device["workers"]:
+            total_workers += 1
+            if worker["state"] == "STEADY":
+                ok_workers += 1
+            if worker["worker_type"] == "balena":
+                balena_worker = worker
+        registration_state = f"{ok_workers}/{total_workers}"
+        row = [
+            device["name"],
+            device["uuid"],
+            localize(device["created_at"]),
+            registration_state,
+            _last_seen_cell(balena_worker),
+        ]
+        if long_:
+            projects = device["properties"].get("authorized_projects") or []
+            row.append(device["properties"].get("machine_name") or "--")
+            row.append(", ".join(projects) if projects else "public")
+            row.append(device["properties"].get("contact_email") or "--")
+            row.append(device["properties"].get("local_egress") or "--")
+        table.add_row(*row)
+    return table
+
+
 @device.command("list", cls=BaseCommand, short_help="list registered devices")
 @click.option(
     "--long",
@@ -210,45 +250,48 @@ def register(
     default=False,
     help="Show additional columns including project restrictions and contact.",
 )
-def list_all(long_: "bool" = False):
+@click.option(
+    "--watch",
+    "watch",
+    is_flag=True,
+    default=False,
+    help="Continuously poll and refresh the device list until interrupted.",
+)
+@click.option(
+    "--interval",
+    default=5.0,
+    show_default=True,
+    metavar="SECONDS",
+    help="Polling interval for --watch.",
+)
+def list_all(long_: "bool" = False, watch: "bool" = False, interval: "float" = 5.0):
     with doni_error_handler("failed to list devices"):
-        devices = doni_client().get("/v1/hardware/").json()["hardware"]
-        table = make_table()
-        table.add_column("Name")
-        table.add_column("UUID")
-        table.add_column("Registered at")
-        table.add_column("Health")
-        table.add_column("Last seen")
-        if long_:
-            table.add_column("Type")
-            table.add_column("Restricted to")
-            table.add_column("Contact")
-            table.add_column("Local egress")
-        for device in devices:
-            balena_worker = None
-            ok_workers, total_workers = 0, 0
-            for worker in device["workers"]:
-                total_workers += 1
-                if worker["state"] == "STEADY":
-                    ok_workers += 1
-                if worker["worker_type"] == "balena":
-                    balena_worker = worker
-            registration_state = f"{ok_workers}/{total_workers}"
-            row = [
-                device["name"],
-                device["uuid"],
-                localize(device["created_at"]),
-                registration_state,
-                _last_seen_cell(balena_worker),
-            ]
-            if long_:
-                projects = device["properties"].get("authorized_projects") or []
-                row.append(device["properties"].get("machine_name") or "--")
-                row.append(", ".join(projects) if projects else "public")
-                row.append(device["properties"].get("contact_email") or "--")
-                row.append(device["properties"].get("local_egress") or "--")
-            table.add_row(*row)
-        console.print(table)
+        doni = doni_client()
+        if not watch:
+            devices = doni.get("/v1/hardware/").json()["hardware"]
+            console.print(build_device_table(devices, long_))
+            return
+
+        from rich.live import Live
+
+        def render():
+            devices = doni.get("/v1/hardware/").json()["hardware"]
+            return Group(
+                build_device_table(devices, long_),
+                Text(
+                    f"Updated {datetime.now().astimezone():%H:%M:%S} "
+                    f"— refreshing every {interval:g}s, Ctrl-C to stop",
+                    style="dim",
+                ),
+            )
+
+        with Live(render(), console=console, screen=False, auto_refresh=False) as live:
+            try:
+                while True:
+                    time.sleep(interval)
+                    live.update(render(), refresh=True)
+            except KeyboardInterrupt:
+                pass
 
 
 @device.command(cls=BaseCommand, short_help="show registered device details")
