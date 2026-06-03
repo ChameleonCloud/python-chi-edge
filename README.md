@@ -37,6 +37,8 @@ chi-edge device register \
 
 After this stage, the device will appear with  (`2/4` checks) passing.
 
+> **Note:** newly registered devices are restricted to your current Chameleon project by default — only reservations from that project can use them. See [Access control](#access-control) to broaden or review access.
+
 ### 2. Bake the OS image
 
 Download the appropriate [balenaOS image](https://chameleoncloud.gitbook.io/chi-edge/edge-sdk#download-balena-os-image) for your device, then configure it for the testbed:
@@ -54,10 +56,41 @@ Write the baked image to your device's storage (microSD or eMMC) using [balenaEt
 | Command | Description |
 |---------|-------------|
 | `chi-edge device list` | List your registered devices |
+| `chi-edge device list --long` | Include type, project restrictions, contact, and local egress columns |
 | `chi-edge device show <name>` | Show device details and health |
 | `chi-edge device set` | Update device configuration |
 | `chi-edge device delete <name>` | Remove a device |
 | `chi-edge device sync <name>` | Force device re-sync |
+
+## Access control
+
+Every device has an `authorized_projects` list that controls which Chameleon projects can reserve it. A fresh registration sets this to your current project only.
+
+### See the current state
+
+```
+chi-edge device list --long
+```
+
+The `Restricted to` column shows the authorized projects, or `public` if the device has no restrictions.
+
+### Add or change authorized projects
+
+```
+chi-edge device set <name> --authorized-projects proj-a,proj-b,proj-c
+```
+
+The list is replaced wholesale — include every project that should retain access.
+
+### Make a device public
+
+Before removing project restrictions, reserve and use the device from your own project to confirm it's working as expected. Once you're satisfied:
+
+```
+chi-edge device set <name> --unset authorized_projects
+```
+
+The device will now accept reservations from any Chameleon project.
 
 ## Configuration
 

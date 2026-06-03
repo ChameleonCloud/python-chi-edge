@@ -157,6 +157,11 @@ def register(
         ctx = click.get_current_context()
         conn = openstack.connect(cloud=ctx.obj.get("os_cloud"))
 
+        if not conn.current_project_id:
+            raise click.ClickException(
+                "cannot register device: no project scope on current auth session"
+            )
+
         if bool(application_credential_id) != bool(application_credential_secret):
             raise click.ClickException(
                 "--application-credential-id and --application-credential-secret must be provided together"
@@ -194,6 +199,7 @@ def register(
                         "application_credential_secret": application_credential_secret,
                         "contact_email": contact_email,
                         "machine_name": machine_name,
+                        "authorized_projects": [conn.current_project_id],
                     },
                 },
             )
