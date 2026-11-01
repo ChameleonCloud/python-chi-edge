@@ -394,3 +394,64 @@ def test_device_set_rejects_set_and_unset_of_same_property():
         assert result.exit_code != 0
         assert "Cannot both set and unset --contact-email" in result.output
         mock_adapter.patch.assert_not_called()
+
+
+def test_device_set_device_profiles_sends_list():
+    mock_adapter = MagicMock()
+    mock_adapter.patch.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with patch("chi_edge.cli.doni_client", return_value=mock_adapter):
+        result = runner.invoke(
+            cli,
+            [
+                "device",
+                "set",
+                FAKE_DEVICE["uuid"],
+                "--device-profiles",
+                "raspberrypi_camera, nvidia_gpu",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_adapter.patch.assert_called_once_with(
+            f"/v1/hardware/{FAKE_DEVICE['uuid']}/",
+            json=[
+                {
+                    "op": "add",
+                    "path": "/properties/device_profiles",
+                    "value": ["raspberrypi_camera", "nvidia_gpu"],
+                },
+            ],
+        )
+
+
+def test_device_register_with_device_profiles():
+    mock_adapter = MagicMock()
+    mock_adapter.post.return_value.json.return_value = FAKE_DEVICE
+
+    runner = CliRunner()
+    with (
+        patch("chi_edge.cli.openstack"),
+        patch("chi_edge.cli.doni_client", return_value=mock_adapter),
+    ):
+        result = runner.invoke(
+            cli,
+            [
+                "device",
+                "register",
+                "iot-rpi4-01",
+                "--machine-name",
+                "raspberrypi4-64",
+                "--contact-email",
+                "test@example.com",
+                "--application-credential-id",
+                "cred-id",
+                "--application-credential-secret",
+                "cred-secret",
+                "--device-profiles",
+                "raspberrypi_camera",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        properties = mock_adapter.post.call_args.kwargs["json"]["properties"]
+        assert properties["device_profiles"] == ["raspberrypi_camera"]

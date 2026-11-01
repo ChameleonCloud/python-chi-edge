@@ -73,6 +73,9 @@ def device():
     pass
 
 
+def split_comma_list(value: "str") -> "list[str]":
+    return [item.strip() for item in value.split(",") if item.strip()]
+
 @device.command(cls=BaseCommand, short_help="register a new device")
 @click.argument("device_name")
 @click.option(
@@ -99,12 +102,19 @@ def device():
     metavar="SECRET",
     help="the secret component of the application credential.",
 )
+@click.option(
+    "--device-profiles",
+    default=None,
+    metavar="PROFILES",
+    help="Device profiles for peripherals, as a comma-separated list.",
+)
 def register(
     device_name: "str",
     machine_name: "str" = None,
     contact_email: "str" = None,
     application_credential_id: "str" = None,
     application_credential_secret: "str" = None,
+    device_profiles: "str" = None,
 ):
     """Register a device on the CHI@Edge testbed as DEVICE_NAME.
 
@@ -182,6 +192,15 @@ def register(
             application_credential_secret = app_cred.secret
             console.print(f"Created application credential [bold]{app_cred.id}[/bold]")
 
+        properties = {
+            "application_credential_id": application_credential_id,
+            "application_credential_secret": application_credential_secret,
+            "contact_email": contact_email,
+            "machine_name": machine_name,
+        }
+        if device_profiles is not None:
+            properties["device_profiles"] = split_comma_list(device_profiles)
+
         device = (
             doni_client(conn)
             .post(
@@ -189,12 +208,7 @@ def register(
                 json={
                     "name": device_name,
                     "hardware_type": "device.balena",
-                    "properties": {
-                        "application_credential_id": application_credential_id,
-                        "application_credential_secret": application_credential_secret,
-                        "contact_email": contact_email,
-                        "machine_name": machine_name,
-                    },
+                    "properties": properties,
                 },
             )
             .json()
@@ -283,6 +297,12 @@ def show(device: "str"):
     type=click.Choice(LOCAL_EGRESS),
 )
 @click.option(
+    "--device-profiles",
+    default=None,
+    metavar="PROFILES",
+    help="Device profiles for peripherals, as a comma-separated list.",
+)
+@click.option(
     "--unset",
     "unset",
     multiple=True,
@@ -296,6 +316,7 @@ def set(
     authorized_projects: "str" = None,
     authorized_projects_reason: "str" = None,
     local_egress: "str" = None,
+    device_profiles: "str" = None,
     unset: "tuple[str, ...]" = (),
 ):
     def patch_to(prop, value):
@@ -331,6 +352,8 @@ def set(
             )
         if local_egress:
             patch.append(patch_to("local_egress", local_egress))
+        if device_profiles is not None:
+            patch.append(patch_to("device_profiles", split_comma_list(device_profiles)))
         for prop in unset:
             patch.append({"op": "remove", "path": f"/properties/{prop}"})
         print_device(doni.patch(f"/v1/hardware/{uuid}/", json=patch).json())
