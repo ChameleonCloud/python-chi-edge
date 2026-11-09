@@ -76,6 +76,7 @@ def device():
 def split_comma_list(value: "str") -> "list[str]":
     return [item.strip() for item in value.split(",") if item.strip()]
 
+
 @device.command(cls=BaseCommand, short_help="register a new device")
 @click.argument("device_name")
 @click.option(
